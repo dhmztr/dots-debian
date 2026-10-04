@@ -112,7 +112,7 @@ Paleta jest w dwóch miejscach, które trzeba trzymać zgodne:
 - `ghostty/config`: `background`, `foreground`, `cursor-color`, `palette = 0..15`
 - `wal/colors-wal.vim`: te same wartości dla motywu nvim (neopywal)
 
-Domyślnie jest Catppuccin Mocha. Po zmianie `wal/colors-wal.vim` uruchom
+Domyślnie jest Rosé Pine (paleta wallusta z setupu NixOS). Po zmianie `wal/colors-wal.vim` uruchom
 ponownie `./install.sh`, bo kopiuje on paletę do `~/.cache/wal/`. Działający
 nvim przeładuje motyw sam. Ghostty przeładuje config po `ctrl+shift+,`.
 
