@@ -203,7 +203,7 @@ pierwsza/ostatnia kolumna (`super+Home/End`).
 
 Mysz: `super` + lewy przycisk przesuwa okno, `super` + prawy zmienia rozmiar.
 Pasek: kropki to pulpity (klik przełącza, scroll po pasku też), zegar
-(klik: data), tray, głośność (klik: wycisz, scroll: zmiana), bateria.
+(klik: data), tray, bateria (tylko na laptopie).
 
 ## Monitory
 
@@ -246,10 +246,8 @@ wiadomości wyskakują jako powiadomienia `dunst` w prawym górnym rogu.
 - Aplikacje, które mają tylko stary tray XEmbed, się tu nie pokażą.
 - Test powiadomień: `notify-send test "działa"`.
 
-Na dole paska pod trayem jest głośność (ikona głośnika i procent). `?`
-zamiast procentu znaczy, że `wpctl` nie odpowiada: sprawdź
-`wpctl status` i czy są zainstalowane `pipewire-pulse` i `wireplumber`.
-Kwadraciki zamiast ikon znaczą brak czcionki Iosevka Nerd Font (krok 2).
+Kwadraciki zamiast ikon (np. baterii) znaczą brak czcionki Iosevka Nerd
+Font (krok 2).
 
 ## Kolory
 
