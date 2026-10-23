@@ -1,0 +1,8 @@
+#!/bin/sh
+# flip "Device Enabled" on every touchpad (libinput / X11)
+xinput list --name-only | grep -i touchpad | while read -r dev; do
+    on="$(xinput list-props "$dev" | sed -n 's/.*Device Enabled ([0-9]*):[[:space:]]*\([01]\).*/\1/p')"
+    if [ "$on" = 1 ]; then xinput disable "$dev"; s=off; else xinput enable "$dev"; s=on; fi
+    command -v notify-send >/dev/null && notify-send -t 1500 "Touchpad" "$s"
+done
+exit 0

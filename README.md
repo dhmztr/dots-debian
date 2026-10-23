@@ -1,10 +1,18 @@
 # dots (Debian 13)
 
-Tylko terminal z setupu NixOS (`main`): **fish**, **ghostty**, **neovim**
-(AstroNvim). Bez Nixa, quickshella, niri i wallusta. Paleta kolorów jest
-stała zamiast generowanej z tapety.
+Setup z NixOS (`nix-dots`) przeniesiony na Debiana 13: **bspwm + sxhkd**
+(X11) z tymi samymi skrótami co niri, **quickshell** (pasek + launcher),
+**fish**, **ghostty**, **neovim** (AstroNvim). Bez Nixa, wallusta, tapet,
+dashboardu i file managera. Nic nie zależy od jednostek systemd: sesja
+startuje z `startx`, a wszystko inne odpala `bspwmrc`. Paleta kolorów
+(Rosé Pine) jest stała.
 
 ```
+bspwm/bspwmrc        -> ~/.config/bspwm    (WM, autostart: sxhkd, quickshell, audio)
+sxhkd/sxhkdrc        -> ~/.config/sxhkd    (wszystkie skróty)
+quickshell/          -> ~/.config/quickshell (pasek + launcher)
+bin/                 -> ~/.local/bin       (shot, screenrec, ocr-clip, touchpad-toggle)
+xinitrc              -> ~/.xinitrc         (kopiowany, tylko gdy go nie ma)
 fish/      -> ~/.config/fish
 ghostty/   -> ~/.config/ghostty
 nvim/      -> ~/.config/nvim
@@ -13,14 +21,60 @@ install.sh    linkuje powyższe, robi kopie zapasowe istniejących configów
 ```
 
 Wszystko poniżej instaluje się z apt, z oficjalnych release'ów na GitHubie,
-przez `cargo` / `go`, bez snapa i flatpaka.
+przez `cargo` / `go`, bez snapa i flatpaka. Komendy działają tak samo w fishu i
+w bashu.
+
+## 0. bspwm, X11 i narzędzia do skrótów
+
+```sh
+sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
+  x11-xserver-utils x11-xkb-utils xinput dbus-bin \
+  bspwm sxhkd i3lock xclip xdotool maim slop jq ffmpeg grabc \
+  tesseract-ocr tesseract-ocr-pol brightnessctl \
+  pipewire pipewire-pulse wireplumber pulseaudio-utils \
+  papirus-icon-theme python3
+# opcjonalnie: powiadomienia (screenshot/nagrywanie/OCR) i emoji (super+.)
+sudo apt install dunst libnotify-bin rofimoji
+```
+
+## 0.1 quickshell (budowanie ze źródeł)
+
+Debian nie ma quickshella w repo. Budowa tylko z X11 (bez Wayland/Hyprland,
+PAM, polkit, greetd), więc zależności są małe:
+
+```sh
+sudo apt install git cmake ninja-build pkg-config g++ \
+  qt6-base-dev qt6-base-private-dev qt6-declarative-dev \
+  qt6-declarative-private-dev qt6-shadertools-dev spirv-tools \
+  libcli11-dev libdrm-dev libxcb1-dev \
+  qml6-module-qtquick qml6-module-qtqml-workerscript qml6-module-qtcore \
+  qml6-module-qtquick-window qt6-svg-plugins
+
+git clone https://github.com/quickshell-mirror/quickshell ~/src/quickshell
+cd ~/src/quickshell
+cmake -GNinja -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_INSTALL_PREFIX=/usr/local \
+  -DUSE_JEMALLOC=OFF -DCRASH_HANDLER=OFF -DWAYLAND=OFF -DHYPRLAND=OFF \
+  -DSCREENCOPY=OFF -DI3=OFF -DSERVICE_PIPEWIRE=OFF -DSERVICE_PAM=OFF \
+  -DSERVICE_POLKIT=OFF -DSERVICE_GREETD=OFF -DSERVICE_NOTIFICATIONS=OFF \
+  -DBLUETOOTH=OFF -DNETWORK=OFF
+cmake --build build
+sudo cmake --install build
+quickshell --version
+```
+
+Przetestowane na commicie `9b0f339`. Jeśli nowszy `master` się nie zbuduje:
+`git checkout 9b0f339` i znowu `cmake --build build`.
+
+`qt6-svg-plugins` jest potrzebny do ikon SVG w launcherze, bez niego ikony
+są puste.
 
 ## 1. Pakiety z apt
 
 ```sh
 sudo apt update
 sudo apt install fish git curl wget unzip build-essential pkg-config \
-  ripgrep fd-find fzf bat eza zoxide fastfetch wl-clipboard direnv \
+  ripgrep fd-find fzf bat eza zoxide fastfetch xclip direnv \
   duf just tealdeer gping tokei rustup golang-go nodejs npm \
   python3-venv clangd fontconfig
 ```
@@ -93,9 +147,19 @@ Aktualizacja: te same komendy jeszcze raz.
 ## 7. Configi
 
 ```sh
-git clone -b debian https://github.com/dhmztr/nix-dots ~/dots
+git clone https://github.com/dhmztr/dots-debian ~/dots
 ~/dots/install.sh
 chsh -s "$(command -v fish)"     # fish jako domyślna powłoka (po relogowaniu)
+```
+
+Start sesji: zaloguj się na tty i wpisz `startx`. `~/.xinitrc` uruchamia
+bspwm (w `dbus-run-session`, gdy nie ma sesyjnego D-Bus, np. bez systemd).
+Autostart bez display managera, na końcu `~/.config/fish/config.fish`:
+
+```fish
+if status is-login; and test -z "$DISPLAY"; and test (tty) = /dev/tty1
+    exec startx
+end
 ```
 
 `install.sh` tworzy symlinki, więc `git pull` w `~/dots` od razu aktualizuje
@@ -104,6 +168,41 @@ configi. Istniejące katalogi przenosi do `*.bak-<data>`.
 Pierwsze uruchomienie `nvim` pobiera pluginy (lazy.nvim), a Mason doinstalowuje
 serwery LSP i formattery. Postęp widać w `:Lazy` i `:Mason`. Może to potrwać
 kilka minut.
+
+## Skróty (super = klawisz Windows)
+
+Te same co w niri. Pełna lista: `super+s` albo `sxhkd/sxhkdrc`.
+
+| skrót | akcja |
+| --- | --- |
+| `super+Return` / `super+q` | ghostty / librewolf (albo firefox-esr) |
+| `super+r` | launcher (aplikacje, kalkulator `2*21`, pliki w `~`) |
+| `super+h/l`, `super+←/→/↑/↓` | fokus okna |
+| `super+k/j`, `super+Tab` | poprzedni / następny / ostatni pulpit |
+| `super+1..9` / `super+shift+1..9` | pulpit / przenieś okno (ten sam numer drugi raz wraca) |
+| `super+shift+h/l/←/→/↑/↓` | zamień okno z sąsiadem |
+| `super+shift+k/j` | przenieś okno na poprzedni / następny pulpit |
+| `super+ctrl+…` / `super+shift+ctrl+…` | fokus monitora / okno na monitor |
+| `super+scroll` | przełączanie pulpitów |
+| `super+shift+c` | zamknij okno |
+| `super+t` / `super+f` / `super+m` | floating / fullscreen / monocle |
+| `super+[` `]`, `super+shift+[` `]` | szerokość / wysokość okna |
+| `super+shift+s` / `super+ctrl+s` | screenshot obszaru / okna (plik + schowek) |
+| `super+shift+r` / `super+ctrl+r` / `super+alt+r` | nagrywanie obszaru / monitora / obszaru z dźwiękiem; ten sam skrót drugi raz kończy (plik w `~/Videos/Recordings` + schowek) |
+| `super+shift+t` | OCR obszaru do schowka |
+| `super+p` | pipeta koloru (`grabc`) |
+| `super+.` | emoji (`rofimoji`) |
+| `super+alt+t` | touchpad on/off |
+| `super+alt+l` | blokada (`i3lock`) |
+| `super+alt+w` | przeładuj sxhkd i quickshell |
+| `super+shift+e` | wyjście z bspwm |
+
+Bez odpowiedników z niri: overview (`super+Esc`), centrowanie kolumny,
+pierwsza/ostatnia kolumna (`super+Home/End`).
+
+Mysz: `super` + lewy przycisk przesuwa okno, `super` + prawy zmienia rozmiar.
+Pasek: kropki to pulpity (klik przełącza, scroll po pasku też), zegar
+(klik: data), tray, głośność (klik: wycisz, scroll: zmiana), bateria.
 
 ## Kolory
 
@@ -124,3 +223,17 @@ nvim przeładuje motyw sam. Ghostty przeładuje config po `ctrl+shift+,`.
 - nvim: LSP i formattery instaluje Mason (na NixOS były z Nixa), parsery
   treesitter kompilują się lokalnie. Usunięte pakiety Nix i Haskell.
 - ghostty: stała paleta zamiast generowanej przez wallust.
+- niri -> bspwm (X11). Brak kompozytora, więc nie ma przezroczystości ani
+  cieni; pasek i launcher są nieprzezroczyste. Jeśli chcesz, doinstaluj
+  `picom` i dopisz `picom -b` w `bspwmrc`.
+- quickshell: tylko pasek i launcher. Bez dashboardu, file managera,
+  powiadomień, OSD i lock screena (blokuje `i3lock`).
+- schowek: `xclip` zamiast `wl-clipboard` (fish `copy`/`paste`/`clipsave`
+  wybierają narzędzie same, zależnie od sesji).
+
+## Bez systemd
+
+Nic tu nie jest jednostką systemd. Gdy init to systemd, pipewire startuje
+przez socket activation jak zwykle. Na sysvinit/runit `bspwmrc` sam odpala
+`pipewire`, `wireplumber` i `pipewire-pulse`, a `~/.xinitrc` tworzy sesyjny
+D-Bus (`dbus-run-session`, potrzebny dla traya).

@@ -167,8 +167,14 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias ......='cd ../../../../..'
-alias copy="wl-copy"
-alias paste="wl-paste"
+# X11 (bspwm) uses xclip, a Wayland session wl-clipboard
+if set -q WAYLAND_DISPLAY
+    alias copy="wl-copy"
+    alias paste="wl-paste"
+else
+    alias copy="xclip -selection clipboard"
+    alias paste="xclip -selection clipboard -o"
+end
 if command -q bat; or command -q batcat
     alias cat='bat'
 end

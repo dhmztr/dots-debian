@@ -1,9 +1,13 @@
-# Save an image from the Wayland clipboard to a file.
+# Save an image from the clipboard (X11 or Wayland) to a file.
 #   clipsave              -> ~/Pictures/Screenshots/clip-<timestamp>.png
 #   clipsave shot.png     -> ./shot.png
 #   clipsave ~/foo/a.jpg  -> chooses matching type if the clipboard has it
 function clipsave --description 'Save clipboard image to a file'
-    set -l types (wl-paste --list-types 2>/dev/null)
+    if set -q WAYLAND_DISPLAY
+        set -f types (wl-paste --list-types 2>/dev/null)
+    else
+        set -f types (xclip -selection clipboard -t TARGETS -o 2>/dev/null)
+    end
     if not string match -qr '^image/' -- $types
         echo "clipsave: no image in clipboard (have: $types)" >&2
         return 1
@@ -28,7 +32,12 @@ function clipsave --description 'Save clipboard image to a file'
         set want (string match -r '^image/[^ ]+' -- $types | head -1)
     end
 
-    if wl-paste --type $want > $out 2>/dev/null
+    if set -q WAYLAND_DISPLAY
+        wl-paste --type $want > $out 2>/dev/null
+    else
+        xclip -selection clipboard -t $want -o > $out 2>/dev/null
+    end
+    if test $status -eq 0 -a -s $out
         echo $out
     else
         echo "clipsave: failed writing $out" >&2

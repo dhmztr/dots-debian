@@ -1,0 +1,103 @@
+# Same bindings as the niri setup (super = MOD). Commands run under /bin/sh
+# (SXHKD_SHELL is set in bspwmrc). super+alt+w reloads this file and
+# restarts quickshell.
+
+# ---- apps -------------------------------------------------------------------
+super + Return
+    ghostty
+super + q
+    librewolf || firefox-esr
+super + r
+    quickshell ipc call launcher toggle
+super + s
+    ghostty --title=keys -e less "$HOME/.config/sxhkd/sxhkdrc"
+
+# ---- session ----------------------------------------------------------------
+super + shift + e
+    bspc quit
+super + alt + w
+    pkill -USR1 -x sxhkd; pkill -x quickshell; setsid -f quickshell >/dev/null 2>&1
+super + alt + l
+    i3lock -n -c 191724
+{super + alt + t,XF86TouchpadToggle}
+    touchpad-toggle
+
+# ---- focus ------------------------------------------------------------------
+super + {h,l,Left,Right}
+    bspc node -f {west,east,west,east}
+super + {Up,Down}
+    bspc node -f {north,south}
+super + {k,j}
+    bspc desktop -f {prev,next}.local
+super + Tab
+    bspc desktop -f last
+
+# ---- move -------------------------------------------------------------------
+super + shift + {h,l,Left,Right,Up,Down}
+    bspc node -s {west,east,west,east,north,south}
+super + shift + {k,j}
+    bspc node -d {prev,next}.local --follow
+
+# ---- monitors ---------------------------------------------------------------
+super + ctrl + {h,l,k,j,Left,Right,Up,Down}
+    bspc monitor -f {west,east,north,south,west,east,north,south}
+super + shift + ctrl + {h,l,k,j,Left,Right,Up,Down}
+    bspc node -m {west,east,north,south,west,east,north,south} --follow
+
+# ---- desktops (pressing the current one jumps back, like niri) --------------
+super + {1-9}
+    bspc desktop -f '^{1-9}.!focused' || bspc desktop -f last
+super + shift + {1-9}
+    bspc node -d '^{1-9}'
+super + {button4,button5}
+    bspc desktop -f {prev,next}.local
+super + shift + {button4,button5}
+    bspc node -d {prev,next}.local --follow
+
+# ---- windows ----------------------------------------------------------------
+super + shift + c
+    bspc node -c
+super + t
+    bspc node -t ~floating
+super + f
+    bspc node -t ~fullscreen
+super + m
+    bspc desktop -l next
+super + bracketleft
+    bspc node -z right -60 0 || bspc node -z left 60 0
+super + bracketright
+    bspc node -z right 60 0 || bspc node -z left -60 0
+super + shift + bracketleft
+    bspc node -z bottom 0 -60 || bspc node -z top 0 60
+super + shift + bracketright
+    bspc node -z bottom 0 60 || bspc node -z top 0 -60
+
+# ---- screenshots / recording / tools ----------------------------------------
+super + shift + s
+    shot region
+super + ctrl + s
+    shot window
+super + shift + r
+    screenrec region
+super + ctrl + r
+    screenrec output
+super + alt + r
+    screenrec region audio
+super + p
+    grabc 2>/dev/null | tr -d '\n' | xclip -selection clipboard
+super + period
+    rofimoji --action copy
+super + shift + t
+    ocr-clip
+super + shift + a
+    pkill -x pw-loopback || pw-loopback
+
+# ---- media keys -------------------------------------------------------------
+XF86Audio{RaiseVolume,LowerVolume}
+    wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%{+,-}
+XF86AudioMute
+    wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+XF86AudioMicMute
+    wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+XF86MonBrightness{Up,Down}
+    brightnessctl set 5%{+,-}

@@ -1,0 +1,58 @@
+#!/bin/sh
+# screenrec region|output [audio]  -> start recording (ffmpeg x11grab)
+# screenrec (again, any args)      -> stop; file goes to ~/Videos/Recordings
+#                                     and is copied to the clipboard
+set -u
+run="${XDG_RUNTIME_DIR:-/tmp}/screenrec-$(id -u)"
+notify() { command -v notify-send >/dev/null && notify-send -t 2500 "Screen recording" "$1"; }
+
+# second press: stop the running recording and hand the file over
+if [ -f "$run.pid" ] && kill -0 "$(cat "$run.pid")" 2>/dev/null; then
+    pid="$(cat "$run.pid")"
+    kill -INT "$pid"                       # ffmpeg finalises the mp4 on SIGINT
+    i=0
+    while kill -0 "$pid" 2>/dev/null; do
+        i=$((i + 1)); [ "$i" -eq 100 ] && kill -TERM "$pid"
+        sleep 0.1
+    done
+    file="$(cat "$run.file")"
+    rm -f "$run.pid" "$run.file"
+    if [ -s "$file" ]; then
+        # as a file (paste into Discord / a file manager), not raw bytes
+        printf 'file://%s\n' "$file" | xclip -selection clipboard -t text/uri-list >/dev/null 2>&1
+        notify "Saved to $file (copied to clipboard)"
+    else
+        rm -f "$file"; notify "Recording failed (see $run.log)"
+    fi
+    exit 0
+fi
+
+mode="${1:-region}"
+extra="${2:-}"
+dir="$HOME/Videos/Recordings"; mkdir -p "$dir"
+file="$dir/$(date +%Y-%m-%d_%H-%M-%S).mp4"
+
+case "$mode" in
+    output)  # focused monitor
+        geom="$(bspc query -T -m | jq -r '.rectangle | "\(.width) \(.height) \(.x) \(.y)"')" ;;
+    *)
+        geom="$(slop -f '%w %h %x %y')" || exit 0 ;;   # Esc cancels
+esac
+set -- $geom
+# libx264 + yuv420p need even dimensions
+w=$(( $1 / 2 * 2 )); h=$(( $2 / 2 * 2 )); x=$3; y=$4
+[ "$w" -gt 0 ] && [ "$h" -gt 0 ] || exit 0
+
+if [ "$extra" = audio ]; then
+    # desktop sound = monitor of the default output (not the mic)
+    set -- -f pulse -i "$(pactl get-default-sink).monitor" -c:a aac -b:a 160k
+else
+    set --
+fi
+
+ffmpeg -nostdin -loglevel error -y \
+    -f x11grab -framerate 30 -video_size "${w}x${h}" -i "${DISPLAY}+${x},${y}" \
+    "$@" -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p "$file" \
+    >"$run.log" 2>&1 &
+echo $! > "$run.pid"; echo "$file" > "$run.file"
+notify "Recording... press the same key again to stop"
