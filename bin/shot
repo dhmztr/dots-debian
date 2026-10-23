@@ -1,0 +1,13 @@
+#!/bin/sh
+# shot region|window -> ~/Pictures/Screenshots/<date>.png + image in clipboard
+set -u
+dir="$HOME/Pictures/Screenshots"; mkdir -p "$dir"
+file="$dir/$(date +%Y-%m-%d_%H-%M-%S).png"
+case "${1:-region}" in
+    window) maim -u -i "$(xdotool getactivewindow)" "$file" ;;
+    *)      maim -u -s "$file" || exit 0 ;;   # Esc cancels the selection
+esac
+[ -s "$file" ] || { rm -f "$file"; exit 0; }
+xclip -selection clipboard -t image/png -i "$file" >/dev/null 2>&1
+command -v notify-send >/dev/null && notify-send -t 2000 "Screenshot" "$file"
+exit 0

@@ -167,14 +167,20 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias ......='cd ../../../../..'
-alias copy="wl-copy"
-alias paste="wl-paste"
+# X11 (bspwm) uses xclip, a Wayland session wl-clipboard
+if set -q WAYLAND_DISPLAY
+    alias copy="wl-copy"
+    alias paste="wl-paste"
+else
+    alias copy="xclip -selection clipboard"
+    alias paste="xclip -selection clipboard -o"
+end
 if command -q bat; or command -q batcat
     alias cat='bat'
 end
 
 # Shortcuts
-alias jctl="journalctl -p 3 -xb"
+command -q journalctl; and alias jctl="journalctl -p 3 -xb"
 alias ff='fastfetch'
 alias q='exit'
 alias h='history'
@@ -192,7 +198,12 @@ alias gpull='git pull'
 
 # System control
 alias wifi='nmtui'
-alias shutdown='systemctl poweroff'
+# systemctl only exists with systemd as init; plain poweroff works on any init
+if command -q systemctl
+    alias shutdown='systemctl poweroff'
+else
+    alias shutdown='sudo poweroff'
+end
 command -q dust; and alias du='dust'
 if command -q zoxide
     zoxide init fish | source

@@ -1,0 +1,64 @@
+#!/bin/sh
+# bspwm session. No systemd units: everything the session needs is started
+# from here, and re-running this file (super+alt+w reloads it) is safe.
+
+# sxhkd runs bindings through $SHELL; fish would choke on sh syntax
+export SXHKD_SHELL=/bin/sh
+pgrep -x sxhkd >/dev/null || sxhkd &
+
+# ---- monitors / desktops ----------------------------------------------------
+# every connected screen side by side, desktops 1-9 split between them
+# (order: MONITORS="HDMI-1 eDP-1", names from `xrandr --query`)
+bspc config remove_disabled_monitors   true
+bspc config remove_unplugged_monitors  true
+bspc config merge_overlapping_monitors true
+"$HOME/.local/bin/monitors" || bspc monitor -d 1 2 3 4 5 6 7 8 9
+
+# ---- layout -----------------------------------------------------------------
+
+bspc config border_width          2
+bspc config window_gap            12
+bspc config split_ratio           0.5
+bspc config borderless_monocle    true
+bspc config gapless_monocle       true
+bspc config focus_follows_pointer true
+bspc config pointer_modifier      mod4
+bspc config pointer_action1       move
+bspc config pointer_action3       resize_corner
+
+# Rosé Pine
+bspc config normal_border_color   "#26233a"
+bspc config active_border_color   "#6e6a86"
+bspc config focused_border_color  "#c4a7e7"
+bspc config presel_feedback_color "#c4a7e7"
+
+# quickshell launcher (matched by window title)
+bspc rule -a '*:*:qs-launcher' state=fullscreen
+bspc rule -a Pavucontrol state=floating
+bspc rule -a Blueman-manager state=floating
+
+# ---- X input ----------------------------------------------------------------
+setxkbmap pl -option caps:escape
+xsetroot -cursor_name left_ptr -solid "#191724"
+# touchpad: tap to click + natural scroll (libinput)
+xinput list --name-only 2>/dev/null | grep -i touchpad | while read -r dev; do
+    xinput set-prop "$dev" "libinput Tapping Enabled" 1 2>/dev/null
+    xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 1 2>/dev/null
+done
+
+# ---- audio without systemd --------------------------------------------------
+# With systemd as init, pipewire is socket-activated per user and must not be
+# started twice. Without it (sysvinit/runit) nothing else starts it.
+if [ ! -d /run/systemd/system ] && command -v pipewire >/dev/null &&
+   ! pgrep -x pipewire >/dev/null; then
+    pipewire & sleep 0.5
+    wireplumber &
+    pipewire-pulse &
+fi
+
+# notifications (screenshots / recording / OCR); optional
+command -v dunst >/dev/null && ! pgrep -x dunst >/dev/null && dunst &
+
+# ---- bar + launcher ---------------------------------------------------------
+pkill -x quickshell
+quickshell >/dev/null 2>&1 &

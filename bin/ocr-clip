@@ -1,0 +1,15 @@
+#!/bin/sh
+# select a region, OCR it (eng+pol), put the text in the clipboard
+set -u
+img="$(mktemp --suffix=.png)"
+trap 'rm -f "$img"' EXIT
+maim -u -s "$img" || exit 0
+txt="$(tesseract "$img" - -l eng+pol 2>/dev/null || true)"
+if [ -n "$txt" ]; then
+    printf '%s' "$txt" | xclip -selection clipboard >/dev/null 2>&1
+    msg="Text copied to clipboard"
+else
+    msg="No text found"
+fi
+command -v notify-send >/dev/null && notify-send -t 2000 "OCR" "$msg"
+exit 0

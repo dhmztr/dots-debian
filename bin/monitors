@@ -1,0 +1,62 @@
+#!/bin/sh
+# Monitor layout like the niri setup: external screens on the left, the
+# laptop panel (eDP/LVDS) right of them, each at its preferred resolution
+# with the highest refresh rate it offers. Every monitor gets its own
+# desktops 1-9 (super+1..9 act on the focused monitor, as in niri).
+# Re-run after plugging a monitor in (super+alt+w does it).
+#   MONITORS="HDMI-1 eDP-1" monitors   -> explicit left-to-right order
+set -u
+
+# hybrid laptop on the nvidia driver: outputs wired to the dGPU (often HDMI)
+# only appear once it is set up as an output sink of the iGPU (reverse PRIME)
+if xrandr --listproviders 2>/dev/null | grep -q 'name:NVIDIA-G0'; then
+    xrandr --setprovideroutputsource NVIDIA-G0 modesetting 2>/dev/null
+fi
+
+query="$(xrandr --query)"
+connected="$(echo "$query" | awk '$2 == "connected" {print $1}')"
+external="$(echo "$connected" | grep -Ev '^(eDP|LVDS|DSI)')"
+internal="$(echo "$connected" | grep -E '^(eDP|LVDS|DSI)')"
+order=""
+for o in ${MONITORS:-} $external $internal; do   # explicit ones first
+    echo "$connected" | grep -qx "$o" || continue
+    case " $order " in *" $o "*) ;; *) order="$order $o" ;; esac
+done
+
+# "<mode> <rate>": the preferred (+) mode and its highest refresh rate
+best_mode() {
+    echo "$query" | awk -v out="$1" '
+        $1 == out { on = 1; next }
+        on && /^[^ ]/ { exit }
+        on && /\+/ {
+            best = 0
+            for (i = 2; i <= NF; i++) { r = $i; gsub(/[*+]/, "", r); if (r + 0 > best) best = r + 0 }
+            print $1, best; exit
+        }'
+}
+
+set --
+prev=""
+for o in $order; do
+    mr="$(best_mode "$o")"
+    if [ -n "$mr" ]; then
+        set -- "$@" --output "$o" --mode "${mr% *}" --rate "${mr#* }"
+    else
+        set -- "$@" --output "$o" --auto
+    fi
+    if [ -z "$prev" ]; then set -- "$@" --pos 0x0 --primary
+    else set -- "$@" --right-of "$prev"; fi
+    prev="$o"
+done
+# unplugged but still enabled outputs would keep an empty monitor around
+for o in $(echo "$query" | awk '$2 == "disconnected" && $3 ~ /^[0-9]/ {print $1}'); do
+    set -- "$@" --output "$o" --off
+done
+[ $# -gt 0 ] && xrandr "$@"
+sleep 0.5   # let bspwm pick up the new layout
+
+# desktops 1-9 on every monitor; a monitor that already has 9 keeps them
+# (and its windows) when this is re-run
+for m in $(bspc query -M --names); do
+    [ "$(bspc query -D -m "$m" | wc -l)" -eq 9 ] || bspc monitor "$m" -d 1 2 3 4 5 6 7 8 9
+done
