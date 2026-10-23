@@ -10,6 +10,7 @@ startuje z `startx`, a wszystko inne odpala `bspwmrc`. Paleta kolorów
 ```
 bspwm/bspwmrc        -> ~/.config/bspwm    (WM, autostart: sxhkd, quickshell, audio)
 sxhkd/sxhkdrc        -> ~/.config/sxhkd    (wszystkie skróty)
+dunst/dunstrc        -> ~/.config/dunst    (powiadomienia)
 quickshell/          -> ~/.config/quickshell (pasek + launcher)
 bin/                 -> ~/.local/bin       (monitors, shot, screenrec, ocr-clip, touchpad-toggle)
 xinitrc              -> ~/.xinitrc         (kopiowany, tylko gdy go nie ma)
@@ -32,9 +33,9 @@ sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
   bspwm sxhkd i3lock xclip xdotool maim slop jq ffmpeg grabc \
   tesseract-ocr tesseract-ocr-pol brightnessctl \
   pipewire pipewire-pulse wireplumber pulseaudio-utils \
-  papirus-icon-theme python3
-# opcjonalnie: powiadomienia (screenshot/nagrywanie/OCR) i emoji (super+.)
-sudo apt install dunst libnotify-bin rofimoji
+  papirus-icon-theme python3 dunst libnotify-bin
+# opcjonalnie: emoji (super+.)
+sudo apt install rofimoji
 ```
 
 ## 0.1 quickshell (budowanie ze źródeł)
@@ -202,7 +203,7 @@ pierwsza/ostatnia kolumna (`super+Home/End`).
 
 Mysz: `super` + lewy przycisk przesuwa okno, `super` + prawy zmienia rozmiar.
 Pasek: kropki to pulpity (klik przełącza, scroll po pasku też), zegar
-(klik: data), tray, głośność (klik: wycisz, scroll: zmiana), bateria.
+(klik: data), tray, bateria (tylko na laptopie).
 
 ## Monitory
 
@@ -228,6 +229,25 @@ pokazuje jego pulpity.
 - Laptop hybrydowy na sterowniku nvidia: jeśli `xrandr --query` nie widzi
   zewnętrznego ekranu (podpięty do NVIDII), skrypt sam próbuje
   `xrandr --setprovideroutputsource NVIDIA-G0 modesetting` (reverse PRIME).
+
+## Tray i powiadomienia (Slack)
+
+Tray jest na dole paska (protokół StatusNotifierItem, ten sam co w KDE i na
+NixOS). Nieprzeczytane w Slacku widać po kropce na jego ikonie, a nowe
+wiadomości wyskakują jako powiadomienia `dunst` w prawym górnym rogu.
+
+- Slack (i inne aplikacje Electron) rejestruje ikonę tylko przy starcie,
+  więc musi wystartować, gdy pasek już działa. Jeśli ikony nie ma, zamknij
+  Slacka całkiem (`pkill -x slack`) i uruchom ponownie.
+- `super+alt+w` przeładowuje quickshell bez zabijania procesu, więc ikony w
+  trayu zostają.
+- W ustawieniach Slacka musi być włączona ikona w trayu / obszarze
+  powiadomień.
+- Aplikacje, które mają tylko stary tray XEmbed, się tu nie pokażą.
+- Test powiadomień: `notify-send test "działa"`.
+
+Kwadraciki zamiast ikon (np. baterii) znaczą brak czcionki Iosevka Nerd
+Font (krok 2).
 
 ## Kolory
 

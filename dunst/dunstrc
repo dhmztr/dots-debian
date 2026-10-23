@@ -1,0 +1,45 @@
+# Notifications (Slack, screenshots, recording, OCR). Started by bspwmrc.
+# Rosé Pine, same palette as ghostty / quickshell.
+
+[global]
+    monitor = 0
+    follow = mouse
+    origin = top-right
+    offset = (12, 12)
+    width = 360
+    height = (0, 200)
+    notification_limit = 5
+    gap_size = 6
+    padding = 10
+    horizontal_padding = 12
+    frame_width = 2
+    frame_color = "#c4a7e7"
+    separator_color = frame
+    corner_radius = 0
+    font = Iosevka Nerd Font 11
+    markup = full
+    format = "<b>%s</b>\n%b"
+    icon_position = left
+    max_icon_size = 40
+    show_age_threshold = 60
+    idle_threshold = 120
+    mouse_left_click = do_action, close_current
+    mouse_middle_click = close_all
+    mouse_right_click = close_current
+
+[urgency_low]
+    background = "#191724"
+    foreground = "#e0def4"
+    frame_color = "#6e6a86"
+    timeout = 4
+
+[urgency_normal]
+    background = "#191724"
+    foreground = "#e0def4"
+    timeout = 8
+
+[urgency_critical]
+    background = "#191724"
+    foreground = "#e0def4"
+    frame_color = "#eb6f92"
+    timeout = 0

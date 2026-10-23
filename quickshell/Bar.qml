@@ -4,7 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.SystemTray
 
 // Vertical bar on the left, like the niri setup: clock on top, bspwm desktops
-// in the middle, tray / volume / battery at the bottom. No compositor is
+// in the middle, tray / battery at the bottom. No compositor is
 // assumed, so the window is opaque (transparent pixels would show black).
 PanelWindow {
     id: root
@@ -76,7 +76,7 @@ PanelWindow {
                                                e.angleDelta.y > 0 ? "prev.local" : "next.local"])
     }
 
-    // ---- bottom: tray, volume, battery --------------------------------------
+    // ---- bottom: tray, battery ----------------------------------------------
     Column {
         anchors { bottom: parent.bottom; horizontalCenter: parent.horizontalCenter; bottomMargin: 10 }
         spacing: 10
@@ -86,13 +86,23 @@ PanelWindow {
             delegate: Item {
                 id: trayItem
                 required property SystemTrayItem modelData
-                width: root.width; height: 22
+                width: root.width; height: 26
                 Image {
+                    id: trayIcon
                     anchors.centerIn: parent
-                    width: 18; height: 18
-                    sourceSize { width: 36; height: 36 }
+                    width: 20; height: 20
+                    sourceSize { width: 40; height: 40 }
                     source: trayItem.modelData.icon
                     fillMode: Image.PreserveAspectFit
+                }
+                // app asks for attention (unread messages etc.): red dot.
+                // Slack/Electron draw their own badge into the icon instead.
+                Rectangle {
+                    visible: trayItem.modelData.status === Status.NeedsAttention
+                    anchors { right: trayIcon.right; top: trayIcon.top; margins: -2 }
+                    width: 8; height: 8; radius: 4
+                    color: Colors.red
+                    border { width: 1; color: Colors.surface }
                 }
                 MouseArea {
                     anchors.fill: parent
@@ -108,53 +118,6 @@ PanelWindow {
                     onWheel: wheel => trayItem.modelData.scroll(wheel.angleDelta.y, false)
                 }
             }
-        }
-
-        // volume: click mutes, scroll changes (wpctl, pipewire)
-        Item {
-            id: vol
-            width: root.width; height: 36
-            property int pct: -1
-            property bool muted: false
-            function refresh() { volProc.running = false; volProc.running = true }
-            function run(args) { volSet.command = args; volSet.running = true }
-            Column {
-                anchors.centerIn: parent
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: vol.muted || vol.pct === 0 ? "󰝟" : vol.pct < 35 ? "󰕿" : vol.pct < 70 ? "󰖀" : "󰕾"
-                    font { family: Colors.font; pixelSize: 16 }
-                    color: vol.muted ? Colors.muted : Colors.cyan
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: vol.pct < 0 ? "?" : vol.pct + "%"
-                    font { family: Colors.font; pixelSize: 9 }
-                    color: Colors.muted
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                onClicked: vol.run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"])
-                onWheel: wheel => vol.run(["wpctl", "set-volume", "-l", "1.0", "@DEFAULT_AUDIO_SINK@",
-                                           wheel.angleDelta.y > 0 ? "5%+" : "5%-"])
-            }
-            // "Volume: 0.45" or "Volume: 0.45 [MUTED]"
-            Process {
-                id: volProc
-                command: ["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"]
-                running: true
-                stdout: StdioCollector {
-                    onStreamFinished: {
-                        const m = this.text.match(/([\d.]+)/)
-                        if (m) vol.pct = Math.round(parseFloat(m[1]) * 100)
-                        vol.muted = this.text.includes("MUTED")
-                    }
-                }
-            }
-            Process { id: volSet; onExited: vol.refresh() }
-            // media keys change the volume outside the bar: poll
-            Timer { interval: 2000; running: true; repeat: true; onTriggered: vol.refresh() }
         }
 
         // battery (hidden on machines without one)
