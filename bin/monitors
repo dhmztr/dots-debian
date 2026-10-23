@@ -4,8 +4,16 @@
 # with the highest refresh rate it offers. Every monitor gets its own
 # desktops 1-9 (super+1..9 act on the focused monitor, as in niri).
 # Re-run after plugging a monitor in (super+alt+w does it).
-#   MONITORS="HDMI-1 eDP-1" monitors   -> explicit left-to-right order
+# Left-to-right order: ~/.config/bspwm/monitor-order (one line of output
+# names from `xrandr --query`, e.g. "eDP HDMI-A-0"), or for one run
+#   MONITORS="eDP HDMI-A-0" monitors
+# A file and not a variable in bspwmrc: super+alt+w runs this from sxhkd,
+# which never sees variables exported later in bspwmrc.
 set -u
+conf="$HOME/.config/bspwm/monitor-order"
+if [ -z "${MONITORS:-}" ] && [ -f "$conf" ]; then
+    MONITORS="$(cat "$conf")"
+fi
 
 # hybrid laptop on the nvidia driver: outputs wired to the dGPU (often HDMI)
 # only appear once it is set up as an output sink of the iGPU (reverse PRIME)

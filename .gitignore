@@ -1,1 +1,3 @@
 fish/fish_variables
+# per-machine monitor order (see README "Monitory")
+bspwm/monitor-order
