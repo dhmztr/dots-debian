@@ -8,7 +8,7 @@ pgrep -x sxhkd >/dev/null || sxhkd &
 
 # ---- monitors / desktops ----------------------------------------------------
 # every connected screen side by side, desktops 1-9 split between them
-# (order: MONITORS="HDMI-1 eDP-1", names from `xrandr --query`)
+# (left-to-right order: ~/.config/bspwm/monitor-order, see README)
 bspc config remove_disabled_monitors   true
 bspc config remove_unplugged_monitors  true
 bspc config merge_overlapping_monitors true

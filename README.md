@@ -213,9 +213,14 @@ prawej, każdy w natywnej rozdzielczości z najwyższym odświeżaniem (eDP
 `super+shift+1..9` działają na monitorze z fokusem, pasek na każdym ekranie
 pokazuje jego pulpity.
 
-- Inna kolejność: w `bspwmrc` przed wywołaniem `monitors` dopisz np.
-  `export MONITORS="eDP HDMI-A-0"` (nazwy z `xrandr --query`; sterownik
-  amdgpu nazywa je `eDP`/`HDMI-A-0`, modesetting `eDP-1`/`HDMI-1`).
+- Inna kolejność: zapisz nazwy od lewej do prawej w
+  `~/.config/bspwm/monitor-order` i wciśnij `super+alt+w`:
+  ```fish
+  xrandr --query | grep ' connected'        # nazwy wyjść
+  echo "eDP HDMI-A-0" > ~/.config/bspwm/monitor-order
+  ```
+  Sterownik amdgpu nazywa je `eDP`/`HDMI-A-0`, modesetting `eDP-1`/`HDMI-1`.
+  Plik jest w `.gitignore`, bo zależy od komputera.
 - Po podłączeniu monitora w trakcie sesji: `super+alt+w`. Okna na
   istniejących pulpitach zostają.
 - Skalowanie: X11 nie ma skali per monitor jak niri. Dla jednej wspólnej
