@@ -180,7 +180,7 @@ if command -q bat; or command -q batcat
 end
 
 # Shortcuts
-alias jctl="journalctl -p 3 -xb"
+command -q journalctl; and alias jctl="journalctl -p 3 -xb"
 alias ff='fastfetch'
 alias q='exit'
 alias h='history'
@@ -198,7 +198,12 @@ alias gpull='git pull'
 
 # System control
 alias wifi='nmtui'
-alias shutdown='systemctl poweroff'
+# systemctl only exists with systemd as init; plain poweroff works on any init
+if command -q systemctl
+    alias shutdown='systemctl poweroff'
+else
+    alias shutdown='sudo poweroff'
+end
 command -q dust; and alias du='dust'
 if command -q zoxide
     zoxide init fish | source
