@@ -56,7 +56,7 @@ if [ ! -d /run/systemd/system ] && command -v pipewire >/dev/null &&
     pipewire-pulse &
 fi
 
-# notifications (screenshots / recording / OCR); optional
+# notifications (Slack, screenshots, recording, OCR)
 command -v dunst >/dev/null && ! pgrep -x dunst >/dev/null && dunst &
 
 # ---- bar + launcher ---------------------------------------------------------

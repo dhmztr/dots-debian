@@ -86,13 +86,23 @@ PanelWindow {
             delegate: Item {
                 id: trayItem
                 required property SystemTrayItem modelData
-                width: root.width; height: 22
+                width: root.width; height: 26
                 Image {
+                    id: trayIcon
                     anchors.centerIn: parent
-                    width: 18; height: 18
-                    sourceSize { width: 36; height: 36 }
+                    width: 20; height: 20
+                    sourceSize { width: 40; height: 40 }
                     source: trayItem.modelData.icon
                     fillMode: Image.PreserveAspectFit
+                }
+                // app asks for attention (unread messages etc.): red dot.
+                // Slack/Electron draw their own badge into the icon instead.
+                Rectangle {
+                    visible: trayItem.modelData.status === Status.NeedsAttention
+                    anchors { right: trayIcon.right; top: trayIcon.top; margins: -2 }
+                    width: 8; height: 8; radius: 4
+                    color: Colors.red
+                    border { width: 1; color: Colors.surface }
                 }
                 MouseArea {
                     anchors.fill: parent
