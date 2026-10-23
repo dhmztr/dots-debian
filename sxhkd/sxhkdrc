@@ -30,7 +30,7 @@ super + {Up,Down}
 super + {k,j}
     bspc desktop -f {prev,next}.local
 super + Tab
-    bspc desktop -f last
+    bspc desktop -f last.local
 
 # ---- move -------------------------------------------------------------------
 super + shift + {h,l,Left,Right,Up,Down}
@@ -44,11 +44,12 @@ super + ctrl + {h,l,k,j,Left,Right,Up,Down}
 super + shift + ctrl + {h,l,k,j,Left,Right,Up,Down}
     bspc node -m {west,east,north,south,west,east,north,south} --follow
 
-# ---- desktops (pressing the current one jumps back, like niri) --------------
+# ---- desktops: 1-9 of the focused monitor, like niri ------------------------
+# (pressing the current one jumps back to the previous one)
 super + {1-9}
-    bspc desktop -f '^{1-9}.!focused' || bspc desktop -f last
+    bspc desktop -f 'focused:^{1-9}.!focused' || bspc desktop -f last.local
 super + shift + {1-9}
-    bspc node -d '^{1-9}'
+    bspc node -d 'focused:^{1-9}'
 super + {button4,button5}
     bspc desktop -f {prev,next}.local
 super + shift + {button4,button5}

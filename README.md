@@ -179,7 +179,7 @@ Te same co w niri. Pełna lista: `super+s` albo `sxhkd/sxhkdrc`.
 | `super+r` | launcher (aplikacje, kalkulator `2*21`, pliki w `~`) |
 | `super+h/l`, `super+←/→/↑/↓` | fokus okna |
 | `super+k/j`, `super+Tab` | poprzedni / następny / ostatni pulpit |
-| `super+1..9` / `super+shift+1..9` | pulpit / przenieś okno (ten sam numer drugi raz wraca) |
+| `super+1..9` / `super+shift+1..9` | pulpit / przenieś okno, na aktywnym monitorze (ten sam numer drugi raz wraca) |
 | `super+shift+h/l/←/→/↑/↓` | zamień okno z sąsiadem |
 | `super+shift+k/j` | przenieś okno na poprzedni / następny pulpit |
 | `super+ctrl+…` / `super+shift+ctrl+…` | fokus monitora / okno na monitor |
@@ -206,14 +206,20 @@ Pasek: kropki to pulpity (klik przełącza, scroll po pasku też), zegar
 
 ## Monitory
 
-`bin/monitors` (odpalany z `bspwmrc` i przez `super+alt+w`) ustawia
-wszystkie podłączone ekrany obok siebie, od lewej w kolejności z
-`xrandr --query`, i dzieli pulpity: przy dwóch 1-5 na lewym, 6-9 na prawym.
-Pasek jest na każdym ekranie i pokazuje jego pulpity.
+Jak w niri na NixOS: `bin/monitors` (odpalany z `bspwmrc` i przez
+`super+alt+w`) ustawia zewnętrzne ekrany po lewej, panel laptopa (eDP) po
+prawej, każdy w natywnej rozdzielczości z najwyższym odświeżaniem (eDP
+2560x1600@240). Każdy monitor ma własne pulpity 1-9, `super+1..9` i
+`super+shift+1..9` działają na monitorze z fokusem, pasek na każdym ekranie
+pokazuje jego pulpity.
 
 - Inna kolejność: w `bspwmrc` przed wywołaniem `monitors` dopisz np.
-  `export MONITORS="HDMI-1 eDP-1"` (nazwy z `xrandr --query`).
-- Po podłączeniu monitora w trakcie sesji: `super+alt+w`.
+  `export MONITORS="eDP HDMI-A-0"` (nazwy z `xrandr --query`; sterownik
+  amdgpu nazywa je `eDP`/`HDMI-A-0`, modesetting `eDP-1`/`HDMI-1`).
+- Po podłączeniu monitora w trakcie sesji: `super+alt+w`. Okna na
+  istniejących pulpitach zostają.
+- Skalowanie: X11 nie ma skali per monitor jak niri. Dla jednej wspólnej
+  skali dopisz `Xft.dpi: 120` (lub 144) do `~/.Xresources`.
 - Laptop hybrydowy na sterowniku nvidia: jeśli `xrandr --query` nie widzi
   zewnętrznego ekranu (podpięty do NVIDII), skrypt sam próbuje
   `xrandr --setprovideroutputsource NVIDIA-G0 modesetting` (reverse PRIME).

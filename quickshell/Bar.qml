@@ -64,7 +64,8 @@ PanelWindow {
                 }
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: Quickshell.execDetached(["bspc", "desktop", "-f", modelData.name])
+                    onClicked: Quickshell.execDetached(["bspc", "desktop", "-f",
+                                                        modelData.monitor + ":^" + modelData.index])
                 }
             }
         }

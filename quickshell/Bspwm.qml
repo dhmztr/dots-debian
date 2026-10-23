@@ -9,7 +9,7 @@ import Quickshell.Io
 QtObject {
     id: root
 
-    // monitor name -> [{ name, focused, occupied, urgent }]
+    // monitor name -> [{ monitor, index, name, focused, occupied, urgent }]
     property var monitors: ({})
 
     function desktops(monitorName) {
@@ -23,13 +23,16 @@ QtObject {
     function _parse(line) {
         if (!line.startsWith("W")) return
         const out = {}
-        let cur = null
+        let cur = null, curName = ""
         for (const item of line.slice(1).split(":")) {
             const k = item[0], v = item.slice(1)
             if (k === "M" || k === "m") {
                 cur = out[v] = []
+                curName = v
             } else if (cur && "OoFfUu".includes(k)) {
                 cur.push({
+                    monitor: curName,
+                    index: cur.length + 1,
                     name: v,
                     focused: k === "O" || k === "F" || k === "U",
                     occupied: k === "O" || k === "o" || k === "U" || k === "u",

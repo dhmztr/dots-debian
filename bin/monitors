@@ -1,9 +1,10 @@
 #!/bin/sh
-# Lay out every connected output left to right (xrandr) and split desktops
-# 1-9 between them, left monitor first. Re-run after plugging a monitor in
-# (super+alt+w does it).
+# Monitor layout like the niri setup: external screens on the left, the
+# laptop panel (eDP/LVDS) right of them, each at its preferred resolution
+# with the highest refresh rate it offers. Every monitor gets its own
+# desktops 1-9 (super+1..9 act on the focused monitor, as in niri).
+# Re-run after plugging a monitor in (super+alt+w does it).
 #   MONITORS="HDMI-1 eDP-1" monitors   -> explicit left-to-right order
-# Default order is the order xrandr lists the outputs.
 set -u
 
 # hybrid laptop on the nvidia driver: outputs wired to the dGPU (often HDMI)
@@ -12,38 +13,50 @@ if xrandr --listproviders 2>/dev/null | grep -q 'name:NVIDIA-G0'; then
     xrandr --setprovideroutputsource NVIDIA-G0 modesetting 2>/dev/null
 fi
 
-connected="$(xrandr --query | awk '$2 == "connected" {print $1}')"
+query="$(xrandr --query)"
+connected="$(echo "$query" | awk '$2 == "connected" {print $1}')"
+external="$(echo "$connected" | grep -Ev '^(eDP|LVDS|DSI)')"
+internal="$(echo "$connected" | grep -E '^(eDP|LVDS|DSI)')"
 order=""
-for o in ${MONITORS:-} $connected; do       # explicit ones first, then the rest
+for o in ${MONITORS:-} $external $internal; do   # explicit ones first
     echo "$connected" | grep -qx "$o" || continue
     case " $order " in *" $o "*) ;; *) order="$order $o" ;; esac
 done
 
+# "<mode> <rate>": the preferred (+) mode and its highest refresh rate
+best_mode() {
+    echo "$query" | awk -v out="$1" '
+        $1 == out { on = 1; next }
+        on && /^[^ ]/ { exit }
+        on && /\+/ {
+            best = 0
+            for (i = 2; i <= NF; i++) { r = $i; gsub(/[*+]/, "", r); if (r + 0 > best) best = r + 0 }
+            print $1, best; exit
+        }'
+}
+
 set --
 prev=""
 for o in $order; do
-    if [ -z "$prev" ]; then set -- "$@" --output "$o" --auto --pos 0x0 --primary
-    else set -- "$@" --output "$o" --auto --right-of "$prev"; fi
+    mr="$(best_mode "$o")"
+    if [ -n "$mr" ]; then
+        set -- "$@" --output "$o" --mode "${mr% *}" --rate "${mr#* }"
+    else
+        set -- "$@" --output "$o" --auto
+    fi
+    if [ -z "$prev" ]; then set -- "$@" --pos 0x0 --primary
+    else set -- "$@" --right-of "$prev"; fi
     prev="$o"
 done
 # unplugged but still enabled outputs would keep an empty monitor around
-for o in $(xrandr --query | awk '$2 == "disconnected" && $3 ~ /^[0-9]/ {print $1}'); do
+for o in $(echo "$query" | awk '$2 == "disconnected" && $3 ~ /^[0-9]/ {print $1}'); do
     set -- "$@" --output "$o" --off
 done
 [ $# -gt 0 ] && xrandr "$@"
 sleep 0.5   # let bspwm pick up the new layout
 
-# desktops: 9 split evenly, left to right (2 screens: 1-5 | 6-9)
-mons="$(for m in $(bspc query -M --names); do
-            printf '%s %s\n' "$(bspc query -T -m "$m" | jq .rectangle.x)" "$m"
-        done | sort -n | cut -d' ' -f2)"
-n=$(echo "$mons" | wc -l)
-i=0; start=1
-for m in $mons; do
-    i=$((i + 1))
-    end=$(( (9 * i + n - 1) / n ))
-    bspc monitor "$m" -d $(seq "$start" "$end")
-    start=$((end + 1))
+# desktops 1-9 on every monitor; a monitor that already has 9 keeps them
+# (and its windows) when this is re-run
+for m in $(bspc query -M --names); do
+    [ "$(bspc query -D -m "$m" | wc -l)" -eq 9 ] || bspc monitor "$m" -d 1 2 3 4 5 6 7 8 9
 done
-# ^1..^9 (super+1..9) count desktops in monitor order: make that left to right
-bspc wm -O $mons
