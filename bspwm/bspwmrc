@@ -6,8 +6,15 @@
 export SXHKD_SHELL=/bin/sh
 pgrep -x sxhkd >/dev/null || sxhkd &
 
-# ---- desktops / layout ------------------------------------------------------
-bspc monitor -d 1 2 3 4 5 6 7 8 9
+# ---- monitors / desktops ----------------------------------------------------
+# every connected screen side by side, desktops 1-9 split between them
+# (order: MONITORS="HDMI-1 eDP-1", names from `xrandr --query`)
+bspc config remove_disabled_monitors   true
+bspc config remove_unplugged_monitors  true
+bspc config merge_overlapping_monitors true
+"$HOME/.local/bin/monitors" || bspc monitor -d 1 2 3 4 5 6 7 8 9
+
+# ---- layout -----------------------------------------------------------------
 
 bspc config border_width          2
 bspc config window_gap            12

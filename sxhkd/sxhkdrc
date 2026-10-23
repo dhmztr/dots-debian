@@ -1,6 +1,6 @@
 # Same bindings as the niri setup (super = MOD). Commands run under /bin/sh
-# (SXHKD_SHELL is set in bspwmrc). super+alt+w reloads this file and
-# restarts quickshell.
+# (SXHKD_SHELL is set in bspwmrc). super+alt+w re-detects monitors, reloads
+# this file and restarts quickshell.
 
 # ---- apps -------------------------------------------------------------------
 super + Return
@@ -16,7 +16,7 @@ super + s
 super + shift + e
     bspc quit
 super + alt + w
-    pkill -USR1 -x sxhkd; pkill -x quickshell; setsid -f quickshell >/dev/null 2>&1
+    monitors; pkill -USR1 -x sxhkd; pkill -x quickshell; setsid -f quickshell >/dev/null 2>&1
 super + alt + l
     i3lock -n -c 191724
 {super + alt + t,XF86TouchpadToggle}

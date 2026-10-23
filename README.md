@@ -11,7 +11,7 @@ startuje z `startx`, a wszystko inne odpala `bspwmrc`. Paleta kolorów
 bspwm/bspwmrc        -> ~/.config/bspwm    (WM, autostart: sxhkd, quickshell, audio)
 sxhkd/sxhkdrc        -> ~/.config/sxhkd    (wszystkie skróty)
 quickshell/          -> ~/.config/quickshell (pasek + launcher)
-bin/                 -> ~/.local/bin       (shot, screenrec, ocr-clip, touchpad-toggle)
+bin/                 -> ~/.local/bin       (monitors, shot, screenrec, ocr-clip, touchpad-toggle)
 xinitrc              -> ~/.xinitrc         (kopiowany, tylko gdy go nie ma)
 fish/      -> ~/.config/fish
 ghostty/   -> ~/.config/ghostty
@@ -203,6 +203,20 @@ pierwsza/ostatnia kolumna (`super+Home/End`).
 Mysz: `super` + lewy przycisk przesuwa okno, `super` + prawy zmienia rozmiar.
 Pasek: kropki to pulpity (klik przełącza, scroll po pasku też), zegar
 (klik: data), tray, głośność (klik: wycisz, scroll: zmiana), bateria.
+
+## Monitory
+
+`bin/monitors` (odpalany z `bspwmrc` i przez `super+alt+w`) ustawia
+wszystkie podłączone ekrany obok siebie, od lewej w kolejności z
+`xrandr --query`, i dzieli pulpity: przy dwóch 1-5 na lewym, 6-9 na prawym.
+Pasek jest na każdym ekranie i pokazuje jego pulpity.
+
+- Inna kolejność: w `bspwmrc` przed wywołaniem `monitors` dopisz np.
+  `export MONITORS="HDMI-1 eDP-1"` (nazwy z `xrandr --query`).
+- Po podłączeniu monitora w trakcie sesji: `super+alt+w`.
+- Laptop hybrydowy na sterowniku nvidia: jeśli `xrandr --query` nie widzi
+  zewnętrznego ekranu (podpięty do NVIDII), skrypt sam próbuje
+  `xrandr --setprovideroutputsource NVIDIA-G0 modesetting` (reverse PRIME).
 
 ## Kolory
 
