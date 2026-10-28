@@ -45,15 +45,14 @@ sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
 
 ## 0.1 quickshell (budowanie ze źródeł)
 
-Debian nie ma quickshella w repo. Budowa z X11 i agentem polkit (okno hasła
-dla pkexec, virt-managera itp.), bez Wayland/Hyprland, PAM i greetd:
+Debian nie ma quickshella w repo. Budowa tylko z X11 (bez Wayland/Hyprland,
+PAM, polkit, greetd), więc zależności są małe:
 
 ```sh
 sudo apt install git cmake ninja-build pkg-config g++ \
   qt6-base-dev qt6-base-private-dev qt6-declarative-dev \
   qt6-declarative-private-dev qt6-shadertools-dev spirv-tools \
   libcli11-dev libdrm-dev libxcb1-dev \
-  libpolkit-agent-1-dev libpolkit-gobject-1-dev libglib2.0-dev \
   qml6-module-qtquick qml6-module-qtqml-workerscript qml6-module-qtcore \
   qml6-module-qtquick-window qt6-svg-plugins
 
@@ -64,7 +63,7 @@ cmake -GNinja -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX=/usr/local \
   -DUSE_JEMALLOC=OFF -DCRASH_HANDLER=OFF -DWAYLAND=OFF -DHYPRLAND=OFF \
   -DSCREENCOPY=OFF -DI3=OFF -DSERVICE_PIPEWIRE=OFF -DSERVICE_PAM=OFF \
-  -DSERVICE_GREETD=OFF -DSERVICE_NOTIFICATIONS=OFF \
+  -DSERVICE_POLKIT=OFF -DSERVICE_GREETD=OFF -DSERVICE_NOTIFICATIONS=OFF \
   -DBLUETOOTH=OFF -DNETWORK=OFF
 cmake --build build
 sudo cmake --install build
@@ -304,7 +303,7 @@ nvim przeładuje motyw sam. Ghostty przeładuje config po `ctrl+shift+,`.
 - niri -> bspwm (X11). Brak kompozytora, więc nie ma przezroczystości ani
   cieni; pasek i launcher są nieprzezroczyste. Jeśli chcesz, doinstaluj
   `picom` i dopisz `picom -b` w `bspwmrc`.
-- quickshell: pasek, launcher i okno hasła polkit. Bez dashboardu (więc też
+- quickshell: pasek i launcher. Bez dashboardu (więc też
   bez kalendarza Google, kafelków i OSD), file managera, powiadomień i lock
   screena (blokuje `i3lock`). Bez „kofeiny”: na X11 nie ma tu demona
   usypiania, więc nie ma czego blokować.
