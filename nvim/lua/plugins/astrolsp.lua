@@ -12,15 +12,9 @@ return {
       inlay_hints = true,
       semantic_tokens = true,
     },
-    formatting = {
-      format_on_save = {
-        enabled = true,
-        allow_filetypes = {},
-        ignore_filetypes = {},
-      },
-      disabled = {},
-      timeout_ms = 1000,
-    },
+    -- no `formatting` block: conform.nvim (community.lua) owns formatting and
+    -- format-on-save and disables AstroLSP's with `formatting.disabled = true`.
+    -- The old `disabled = {}` here overrode that, so every save ran both.
     -- Language servers are installed by Mason (the community packs add them to
     -- its ensure_installed). rust-analyzer comes from rustup and is set up by
     -- rustaceanvim (astrocommunity.pack.rust) - it must NOT be listed here, or
