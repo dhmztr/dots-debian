@@ -121,7 +121,7 @@ Alternatywa: budowanie ze źródeł wg
 
 ```sh
 rustup default stable
-rustup component add rust-analyzer      # LSP dla Rusta w nvim
+rustup component add rust-analyzer clippy   # LSP dla Rusta w nvim, `clippy` (alias fisha)
 
 # cargo-binstall pobiera gotowe binarki zamiast kompilować (dużo szybciej)
 cargo install cargo-binstall
@@ -137,18 +137,6 @@ cargo install --path ~/dots/tools/qs-tools --bin qs-apps
 ```
 
 `tree-sitter-cli` jest potrzebny nvimowi do kompilowania parserów składni.
-
-## 4.1 Haskell (ghcup)
-
-Oficjalny instalator, bez snapa. Daje GHC, cabal i haskell-language-server w
-pasujących wersjach (nvim: pack haskell, formatowanie fourmolu przez Mason):
-
-```sh
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
-ghcup install hls --set
-cabal install hlint ghcid hoogle
-hoogle generate          # baza do wyszukiwania po typach (telescope_hoogle)
-```
 
 ## 5. Narzędzia z Go
 
@@ -296,7 +284,7 @@ nvim przeładuje motyw sam. Ghostty przeładuje config po `ctrl+shift+,`.
 - nvim: LSP i formattery instaluje Mason (na NixOS były z Nixa), parsery
   treesitter kompilują się lokalnie. Bez packa Nix. Formatuje tylko conform
   (wcześniej każdy zapis formatował dwa razy). Pluginy jak na NixOS: packi
-  json/yaml/toml/markdown/fish/haskell, obsidian.nvim (sam znajduje vaulty
+  json/yaml/toml/markdown/fish, obsidian.nvim (sam znajduje vaulty
   Obsidiana), render-markdown, flash (`s`), yazi (`<Leader>-`), oil
   (`<Leader>O`), diffview, trouble (`<Leader>x`), todo-comments, grug-far.
 - ghostty: stała paleta zamiast generowanej przez wallust.
