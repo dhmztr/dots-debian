@@ -15,7 +15,6 @@ return {
       sh = { "shfmt" },
       bash = { "shfmt" },
       python = { "ruff_organize_imports", "ruff_format" },
-      haskell = { "fourmolu" },
       javascript = prettier,
       typescript = prettier,
       javascriptreact = prettier,

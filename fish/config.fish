@@ -219,4 +219,6 @@ alias cr='cargo run --release'
 # Tiny: max size shrink (opt-level=z, abort on panic - don't use for `cargo test`)
 alias cbt "cargo build --release --config 'profile.release.opt-level=\"z\"' --config 'profile.release.panic=\"abort\"'"
 alias ccl='cargo clean'
+# lint every target (tests, examples, benches) with all features
+alias clippy='cargo clippy --all-targets --all-features'
 alias csize='cargo build --release; and du -sh target/release'

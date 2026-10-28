@@ -7,7 +7,7 @@ return {
   opts = function(_, opts)
     opts.ensure_installed = require("astrocore").list_insert_unique(
       opts.ensure_installed or {},
-      { "stylua", "shfmt", "prettier", "ruff", "fourmolu" }
+      { "stylua", "shfmt", "prettier", "ruff" }
     )
   end,
 }

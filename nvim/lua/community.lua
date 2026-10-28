@@ -11,7 +11,6 @@ return {
   { import = "astrocommunity.pack.bash" },
   { import = "astrocommunity.pack.typescript" },
   { import = "astrocommunity.editing-support.conform-nvim" },
-  { import = "astrocommunity.pack.haskell" },
   { import = "astrocommunity.pack.json" },
   { import = "astrocommunity.pack.yaml" },
   { import = "astrocommunity.pack.toml" },
