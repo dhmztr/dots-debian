@@ -34,6 +34,7 @@ bspc config presel_feedback_color "#c4a7e7"
 
 # quickshell launcher (matched by window title)
 bspc rule -a '*:*:qs-launcher' state=fullscreen
+bspc rule -a '*:*:qs-polkit' state=fullscreen
 bspc rule -a Pavucontrol state=floating
 bspc rule -a Blueman-manager state=floating
 

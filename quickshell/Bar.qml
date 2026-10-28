@@ -43,6 +43,36 @@ PanelWindow {
         MouseArea { anchors.fill: parent; onClicked: clock.showDate = !clock.showDate }
     }
 
+    // ---- recording: red pulsing dot + timer while screenrec runs; click stops
+    Item {
+        id: rec
+        anchors { top: clock.bottom; horizontalCenter: parent.horizontalCenter; topMargin: 6 }
+        width: parent.width
+        height: visible ? 34 : 0
+        visible: RecState.active
+        Column {
+            anchors.centerIn: parent
+            spacing: 2
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 12; height: 12; radius: 6
+                color: Colors.red
+                SequentialAnimation on opacity {
+                    running: rec.visible; loops: Animation.Infinite
+                    NumberAnimation { to: 0.25; duration: 700; easing.type: Easing.InOutSine }
+                    NumberAnimation { to: 1;    duration: 700; easing.type: Easing.InOutSine }
+                }
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: RecState.clock
+                font { family: Colors.font; pixelSize: 9 }
+                color: Colors.red
+            }
+        }
+        MouseArea { anchors.fill: parent; onClicked: RecState.stop() }
+    }
+
     // ---- middle: bspwm desktops ---------------------------------------------
     Column {
         anchors.centerIn: parent

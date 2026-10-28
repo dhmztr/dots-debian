@@ -4,7 +4,9 @@ import Quickshell.Io
 import QtCore
 
 // App launcher (super+r -> `quickshell ipc call launcher toggle`): apps from
-// .desktop files, calculator ("2*21"), file search in ~ (fd / fdfind).
+// .desktop files, open windows (bspwm), calculator ("2*21"), emoji (":" prefix
+// or super+. -> `quickshell ipc call launcher emoji`), file search in ~
+// (fd / fdfind).
 // Full-screen dim overlay; click outside or Esc closes it.
 //
 // A normal (managed) window rather than a PanelWindow: bspwm never gives
@@ -38,10 +40,17 @@ FloatingWindow {
         function toggle(): void { root.visible = !root.visible }
         function open(): void   { root.visible = true }
         function close(): void  { root.visible = false }
+        function emoji(): void {
+            root.visible = true
+            searchInput.text = ":"
+            searchInput.cursorPosition = 1
+        }
     }
 
     readonly property Process _appLoader: Process {
-        command: ["sh","-c","python3 ~/.config/quickshell/scripts/qs-apps.py"]
+        // qs-apps: Rust indexer (tools/qs-tools, `cargo install`), same output
+        // as the Python script, which stays as the fallback
+        command: ["sh", "-c", "command -v qs-apps >/dev/null && exec qs-apps; exec python3 ~/.config/quickshell/scripts/qs-apps.py"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
@@ -58,9 +67,25 @@ FloatingWindow {
         }
     }
 
+    // open bspwm windows (id, class, title), refreshed on every open
+    property var _windows: []
+    readonly property Process _winLoader: Process {
+        command: ["sh", "-c", "for w in $(bspc query -N -n .window); do printf '%s\\t%s\\t%s\\n' \"$w\" \"$(xdotool getwindowclassname \"$w\" 2>/dev/null)\" \"$(xdotool getwindowname \"$w\" 2>/dev/null)\"; done"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root._windows = this.text.split("\n").filter(l => l).map(l => {
+                    const p = l.split("\t")
+                    return { id: p[0], app: p[1] || "", title: p.slice(2).join("\t") }
+                }).filter(w => w.title !== "qs-launcher")
+                if (root.visible) root.filterApps(searchInput.text)
+            }
+        }
+    }
+
     onVisibleChanged: {
         if (visible) {
             _appLoader.running = false; _appLoader.running = true
+            _winLoader.running = false; _winLoader.running = true
             searchInput.text = ""
             root.activeCategory = "All"
             resultsList.currentIndex = 0
@@ -121,9 +146,52 @@ FloatingWindow {
         return result
     }
 
+    // ── emoji picker (":" prefix, super+.) ───────────────────────────
+    // Unicode's emoji-test.txt from the unicode-data package. Parsed once,
+    // on first use.
+    property var _emoji: []
+    readonly property FileView _emojiFile: FileView {
+        path: "/usr/share/unicode/emoji/emoji-test.txt"
+        preload: false        // read on the first ":" query,
+        blockLoading: true    // synchronously (one ~0.5 MB file, once)
+    }
+    function _loadEmoji() {
+        if (root._emoji.length > 0) return
+        const out = []
+        let group = ""
+        for (const line of (_emojiFile.text() || "").split("\n")) {
+            if (line.startsWith("# group:")) { group = line.slice(8).trim().toLowerCase(); continue }
+            // "1F600 ; fully-qualified # 😀 E1.0 grinning face"
+            const i = line.indexOf("; fully-qualified")
+            if (i < 0) continue
+            const m = line.slice(line.indexOf("#", i) + 1).trim().match(/^(\S+)\s+E[\d.]+\s+(.+)$/)
+            if (m) out.push({ ch: m[1], name: m[2], key: m[2].toLowerCase() + " " + group })
+        }
+        root._emoji = out
+    }
+    function _filterEmoji(q) {
+        _loadEmoji()
+        const words = q.split(/\s+/).filter(w => w)
+        let n = 0
+        for (const e of root._emoji) {
+            if (words.length && !words.every(w => e.key.includes(w))) continue
+            combinedModel.append({ label: e.name, sub: "", glyph: e.ch, iconSrc: "",
+                                   kind: "emoji", appIdx: -1, desktopId: "", exec: "" })
+            if (++n >= 40) break
+        }
+        resultsList.currentIndex = 0
+    }
+
     function filterApps(query) {
         combinedModel.clear()
         const q = query.toLowerCase().trim()
+
+        if (q.startsWith(":")) {
+            root._fdSerial++
+            _fdDebounce.stop()
+            _filterEmoji(q.slice(1).trim())
+            return
+        }
 
         let usage = {}
         try { usage = JSON.parse(appUsage.usageData || "{}") } catch(e) {}
@@ -161,6 +229,17 @@ FloatingWindow {
                 source: a.source
             })
         })
+
+        // open windows first: typing an open app's name jumps to it
+        if (q.length >= 2) {
+            root._windows.filter(w => w.title.toLowerCase().includes(q) || w.app.toLowerCase().includes(q))
+                .slice(0, 4).forEach((w, i) => combinedModel.insert(i, {
+                    label: w.title || w.app || "window",
+                    sub: "Window · " + w.app,
+                    iconSrc: Quickshell.iconPath(w.app.toLowerCase(), "window"),
+                    kind: "window", appIdx: -1, desktopId: "", exec: "", winId: w.id
+                }))
+        }
 
         // Calculator mode
         const mathMatch = q.match(/^[\d\s\+\-\*\/\.\(\)%^]+$/)
@@ -222,6 +301,19 @@ FloatingWindow {
         if (idx < 0 || idx >= combinedModel.count) return
         const item = combinedModel.get(idx)
 
+        if (item.kind === "window") {
+            // bspwm switches to the window's desktop/monitor too
+            launchProc.command = ["bspc", "node", item.winId, "-f"]
+            launchProc.running = false; launchProc.running = true
+            root.visible = false
+            return
+        }
+        if (item.kind === "emoji") {
+            launchProc.command = ["setsid", "-f", "sh", "-c", "printf '%s' \"$1\" | xclip -selection clipboard", "_", item.glyph]
+            launchProc.running = false; launchProc.running = true
+            root.visible = false
+            return
+        }
         if (item.kind === "calc") {
             // Copy result to clipboard - content via stdin, never in shell string
             launchProc.command = ["setsid", "-f", "sh", "-c", "printf '%s' \"$1\" | xclip -selection clipboard", "_", item.label.slice(2)]
@@ -349,7 +441,15 @@ FloatingWindow {
                     Row {
                         anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                         spacing: 12
+                        Text {
+                            visible: (modelData.glyph || "") !== ""
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 28; horizontalAlignment: Text.AlignHCenter
+                            text: modelData.glyph || ""
+                            font.pixelSize: 22
+                        }
                         Image {
+                            visible: (modelData.glyph || "") === ""
                             anchors.verticalCenter: parent.verticalCenter
                             width: 28; height: 28; smooth: true; mipmap: true
                             source: modelData.iconSrc || ""

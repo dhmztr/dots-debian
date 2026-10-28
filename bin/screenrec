@@ -17,6 +17,8 @@ if [ -f "$run.pid" ] && kill -0 "$(cat "$run.pid")" 2>/dev/null; then
     done
     file="$(cat "$run.file")"
     rm -f "$run.pid" "$run.file"
+    # bar indicator off (quickshell RecState)
+    quickshell ipc call rec stopped >/dev/null 2>&1 || true
     if [ -s "$file" ]; then
         # as a file (paste into Discord / a file manager), not raw bytes
         printf 'file://%s\n' "$file" | xclip -selection clipboard -t text/uri-list >/dev/null 2>&1
@@ -50,9 +52,35 @@ else
     set --
 fi
 
-ffmpeg -nostdin -loglevel error -y \
-    -f x11grab -framerate 30 -video_size "${w}x${h}" -i "${DISPLAY}+${x},${y}" \
-    "$@" -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p "$file" \
-    >"$run.log" 2>&1 &
-echo $! > "$run.pid"; echo "$file" > "$run.file"
+grab() { # grab <ffmpeg global opts...> -- <video encoder opts...>
+    pre=""; while [ "$1" != "--" ]; do pre="$pre $1"; shift; done; shift
+    # shellcheck disable=SC2086 # $pre is a list of plain options
+    ffmpeg -nostdin -loglevel error -y $pre \
+        -f x11grab -framerate 30 -video_size "${w}x${h}" -i "${DISPLAY}+${x},${y}" \
+        $audio "$@" "$file" >>"$run.log" 2>&1 &
+    pid=$!
+}
+audio="$*"   # audio input + codec options (or empty)
+: >"$run.log"
+
+# encode on the AMD iGPU (VAAPI): far less CPU and heat than libx264. Its
+# render node is found by driver, not by number (an NVIDIA one may come
+# first). If VAAPI does not start, fall back to software x264.
+vaapi=""
+for n in /sys/class/drm/renderD*; do
+    [ "$(basename "$(readlink -f "$n/device/driver")")" = amdgpu ] && vaapi="/dev/dri/$(basename "$n")" && break
+done
+pid=""
+if [ -n "$vaapi" ]; then
+    grab -vaapi_device "$vaapi" -- -vf "format=nv12,hwupload" -c:v h264_vaapi -qp 24
+    sleep 1
+    kill -0 "$pid" 2>/dev/null || pid=""
+fi
+if [ -z "$pid" ]; then
+    rm -f "$file"
+    grab -- -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p
+fi
+echo "$pid" > "$run.pid"; echo "$file" > "$run.file"
+# bar indicator on: red dot + timer, click stops (quickshell RecState)
+quickshell ipc call rec started "$file" >/dev/null 2>&1 || true
 notify "Recording... press the same key again to stop"
