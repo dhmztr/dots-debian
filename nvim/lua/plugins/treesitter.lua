@@ -29,7 +29,7 @@ return {
     -- the community packs add their languages; these cover the rest of the config
     opts.treesitter.ensure_installed = require("astrocore").list_insert_unique(
       opts.treesitter.ensure_installed or {},
-      { "vim", "vimdoc", "lua", "bash", "fish", "json", "yaml", "toml", "markdown", "markdown_inline", "regex" }
+      { "vim", "vimdoc", "lua", "bash", "fish", "json", "yaml", "toml", "markdown", "markdown_inline", "html", "regex" }
     )
   end,
 }

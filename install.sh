@@ -29,6 +29,7 @@ link bspwm      "$HOME/.config/bspwm"
 link sxhkd      "$HOME/.config/sxhkd"
 link quickshell "$HOME/.config/quickshell"
 link dunst      "$HOME/.config/dunst"
+link lazygit    "$HOME/.config/lazygit"
 for f in "$repo"/bin/*; do
     link "bin/$(basename "$f")" "$HOME/.local/bin/$(basename "$f")"
 done

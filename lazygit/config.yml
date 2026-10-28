@@ -1,0 +1,6 @@
+# lazygit config. AstroNvim (<Leader>gg) starts lazygit with
+# LG_CONFIG_FILE=~/.config/lazygit/config.yml,<theme>; if this file is
+# missing lazygit exits at once and the float opens and closes immediately.
+gui:
+  nerdFontsVersion: "3"
+disableStartupPopups: true

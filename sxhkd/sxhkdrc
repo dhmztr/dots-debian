@@ -74,7 +74,10 @@ super + shift + bracketright
     bspc node -z bottom 0 60 || bspc node -z top 0 -60
 
 # ---- screenshots / recording / tools ----------------------------------------
+# region + annotate (arrows, blur, text; flameshot), Print = quick region shot
 super + shift + s
+    flameshot gui || shot region
+Print
     shot region
 super + ctrl + s
     shot window
@@ -87,7 +90,7 @@ super + alt + r
 super + p
     grabc 2>/dev/null | tr -d '\n' | xclip -selection clipboard
 super + period
-    rofimoji --action copy
+    quickshell ipc call launcher emoji
 super + shift + t
     ocr-clip
 super + shift + a
@@ -100,5 +103,7 @@ XF86AudioMute
     wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 XF86AudioMicMute
     wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+XF86Audio{Play,Next,Prev}
+    playerctl {play-pause,next,previous}
 XF86MonBrightness{Up,Down}
     brightnessctl set 5%{+,-}

@@ -11,6 +11,8 @@ startuje z `startx`, a wszystko inne odpala `bspwmrc`. Paleta kolorów
 bspwm/bspwmrc        -> ~/.config/bspwm    (WM, autostart: sxhkd, quickshell, audio)
 sxhkd/sxhkdrc        -> ~/.config/sxhkd    (wszystkie skróty)
 dunst/dunstrc        -> ~/.config/dunst    (powiadomienia)
+lazygit/config.yml   -> ~/.config/lazygit  (bez niego `spacja gg` w nvimie od razu się zamyka)
+tools/qs-tools/      indeks aplikacji launchera w Ruście (`cargo install`, krok 4)
 quickshell/          -> ~/.config/quickshell (pasek + launcher)
 bin/                 -> ~/.local/bin       (monitors, shot, screenrec, ocr-clip, touchpad-toggle)
 xinitrc              -> ~/.xinitrc         (kopiowany, tylko gdy go nie ma)
@@ -33,39 +35,44 @@ sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
   bspwm sxhkd i3lock xclip xdotool maim slop jq ffmpeg grabc \
   tesseract-ocr tesseract-ocr-pol brightnessctl \
   pipewire pipewire-pulse wireplumber pulseaudio-utils \
-  papirus-icon-theme python3 dunst libnotify-bin
-# opcjonalnie: emoji (super+.)
-sudo apt install rofimoji
+  papirus-icon-theme python3 dunst libnotify-bin \
+  unicode-data fonts-noto-color-emoji playerctl flameshot lazygit btop
 ```
+
+- `unicode-data` + `fonts-noto-color-emoji`: emoji w launcherze (`super+.`).
+- `flameshot`: screenshot z adnotacją (`super+shift+s`), `Print` robi zwykły.
+- `lazygit`: `spacja gg` w nvimie (config w `lazygit/`).
 
 ## 0.1 quickshell (budowanie ze źródeł)
 
-Debian nie ma quickshella w repo. Budowa tylko z X11 (bez Wayland/Hyprland,
-PAM, polkit, greetd), więc zależności są małe:
+Debian nie ma quickshella w repo. Budowa z X11 i agentem polkit (okno hasła
+dla pkexec, virt-managera itp.), bez Wayland/Hyprland, PAM i greetd:
 
 ```sh
 sudo apt install git cmake ninja-build pkg-config g++ \
   qt6-base-dev qt6-base-private-dev qt6-declarative-dev \
   qt6-declarative-private-dev qt6-shadertools-dev spirv-tools \
   libcli11-dev libdrm-dev libxcb1-dev \
+  libpolkit-agent-1-dev libpolkit-gobject-1-dev libglib2.0-dev \
   qml6-module-qtquick qml6-module-qtqml-workerscript qml6-module-qtcore \
   qml6-module-qtquick-window qt6-svg-plugins
 
 git clone https://github.com/quickshell-mirror/quickshell ~/src/quickshell
 cd ~/src/quickshell
+git checkout v0.3.0      # przetestowana wersja (ta sama co w nixpkgs)
 cmake -GNinja -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX=/usr/local \
   -DUSE_JEMALLOC=OFF -DCRASH_HANDLER=OFF -DWAYLAND=OFF -DHYPRLAND=OFF \
   -DSCREENCOPY=OFF -DI3=OFF -DSERVICE_PIPEWIRE=OFF -DSERVICE_PAM=OFF \
-  -DSERVICE_POLKIT=OFF -DSERVICE_GREETD=OFF -DSERVICE_NOTIFICATIONS=OFF \
+  -DSERVICE_GREETD=OFF -DSERVICE_NOTIFICATIONS=OFF \
   -DBLUETOOTH=OFF -DNETWORK=OFF
 cmake --build build
 sudo cmake --install build
 quickshell --version
 ```
 
-Przetestowane na commicie `9b0f339`. Jeśli nowszy `master` się nie zbuduje:
-`git checkout 9b0f339` i znowu `cmake --build build`.
+Nowsza wersja: `git fetch --tags; git checkout <tag>` i znowu `cmake --build build`
+oraz `sudo cmake --install build`.
 
 `qt6-svg-plugins` jest potrzebny do ikon SVG w launcherze, bez niego ikony
 są puste.
@@ -120,9 +127,29 @@ rustup component add rust-analyzer      # LSP dla Rusta w nvim
 # cargo-binstall pobiera gotowe binarki zamiast kompilować (dużo szybciej)
 cargo install cargo-binstall
 cargo binstall -y atuin du-dust procs ouch zellij broot xh tree-sitter-cli yazi-fm yazi-cli
+# dev: ciągły cargo check, szybsze testy, czyszczenie target/, benchmarki,
+# fuzzy finder z podglądem, ruch sieciowy per proces
+cargo binstall -y bacon cargo-nextest kondo hyperfine television bandwhich
+sudo setcap cap_sys_ptrace,cap_dac_read_search,cap_net_raw,cap_net_admin+ep "$(command -v bandwhich)"
+
+# indeks aplikacji dla launchera w Ruście (z tego repo; bez niego launcher
+# używa wersji w Pythonie)
+cargo install --path ~/dots/tools/qs-tools --bin qs-apps
 ```
 
 `tree-sitter-cli` jest potrzebny nvimowi do kompilowania parserów składni.
+
+## 4.1 Haskell (ghcup)
+
+Oficjalny instalator, bez snapa. Daje GHC, cabal i haskell-language-server w
+pasujących wersjach (nvim: pack haskell, formatowanie fourmolu przez Mason):
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+ghcup install hls --set
+cabal install hlint ghcid hoogle
+hoogle generate          # baza do wyszukiwania po typach (telescope_hoogle)
+```
 
 ## 5. Narzędzia z Go
 
@@ -177,7 +204,7 @@ Te same co w niri. Pełna lista: `super+s` albo `sxhkd/sxhkdrc`.
 | skrót | akcja |
 | --- | --- |
 | `super+Return` / `super+q` | ghostty / librewolf (albo firefox-esr) |
-| `super+r` | launcher (aplikacje, kalkulator `2*21`, pliki w `~`) |
+| `super+r` | launcher (aplikacje, otwarte okna, kalkulator `2*21`, emoji po `:`, pliki w `~`) |
 | `super+h/l`, `super+←/→/↑/↓` | fokus okna |
 | `super+k/j`, `super+Tab` | poprzedni / następny / ostatni pulpit |
 | `super+1..9` / `super+shift+1..9` | pulpit / przenieś okno, na aktywnym monitorze (ten sam numer drugi raz wraca) |
@@ -188,15 +215,17 @@ Te same co w niri. Pełna lista: `super+s` albo `sxhkd/sxhkdrc`.
 | `super+shift+c` | zamknij okno |
 | `super+t` / `super+f` / `super+m` | floating / fullscreen / monocle |
 | `super+[` `]`, `super+shift+[` `]` | szerokość / wysokość okna |
-| `super+shift+s` / `super+ctrl+s` | screenshot obszaru / okna (plik + schowek) |
-| `super+shift+r` / `super+ctrl+r` / `super+alt+r` | nagrywanie obszaru / monitora / obszaru z dźwiękiem; ten sam skrót drugi raz kończy (plik w `~/Videos/Recordings` + schowek) |
+| `super+shift+s` | screenshot obszaru z adnotacją (flameshot) |
+| `Print` / `super+ctrl+s` | screenshot obszaru / okna (plik + schowek) |
+| `super+shift+r` / `super+ctrl+r` / `super+alt+r` | nagrywanie obszaru / monitora / obszaru z dźwiękiem; ten sam skrót drugi raz kończy (plik w `~/Videos/Recordings` + schowek). Na pasku czerwona kropka z czasem, klik kończy. Kodowanie na GPU AMD (VAAPI), bez niego x264 |
 | `super+shift+t` | OCR obszaru do schowka |
 | `super+p` | pipeta koloru (`grabc`) |
-| `super+.` | emoji (`rofimoji`) |
+| `super+.` | emoji w launcherze (albo `:` i nazwa w launcherze) |
 | `super+alt+t` | touchpad on/off |
 | `super+alt+l` | blokada (`i3lock`) |
 | `super+alt+w` | przeładuj sxhkd i quickshell |
 | `super+shift+e` | wyjście z bspwm |
+| klawisze multimedialne | głośność, mikrofon, play/next/prev (`playerctl`), jasność |
 
 Bez odpowiedników z niri: overview (`super+Esc`), centrowanie kolumny,
 pierwsza/ostatnia kolumna (`super+Home/End`).
@@ -266,13 +295,19 @@ nvim przeładuje motyw sam. Ghostty przeładuje config po `ctrl+shift+,`.
   (`apt update` + `full-upgrade`). Wszystkie aliasy do dodatkowych narzędzi
   są warunkowe.
 - nvim: LSP i formattery instaluje Mason (na NixOS były z Nixa), parsery
-  treesitter kompilują się lokalnie. Usunięte pakiety Nix i Haskell.
+  treesitter kompilują się lokalnie. Bez packa Nix. Formatuje tylko conform
+  (wcześniej każdy zapis formatował dwa razy). Pluginy jak na NixOS: packi
+  json/yaml/toml/markdown/fish/haskell, obsidian.nvim (sam znajduje vaulty
+  Obsidiana), render-markdown, flash (`s`), yazi (`<Leader>-`), oil
+  (`<Leader>O`), diffview, trouble (`<Leader>x`), todo-comments, grug-far.
 - ghostty: stała paleta zamiast generowanej przez wallust.
 - niri -> bspwm (X11). Brak kompozytora, więc nie ma przezroczystości ani
   cieni; pasek i launcher są nieprzezroczyste. Jeśli chcesz, doinstaluj
   `picom` i dopisz `picom -b` w `bspwmrc`.
-- quickshell: tylko pasek i launcher. Bez dashboardu, file managera,
-  powiadomień, OSD i lock screena (blokuje `i3lock`).
+- quickshell: pasek, launcher i okno hasła polkit. Bez dashboardu (więc też
+  bez kalendarza Google, kafelków i OSD), file managera, powiadomień i lock
+  screena (blokuje `i3lock`). Bez „kofeiny”: na X11 nie ma tu demona
+  usypiania, więc nie ma czego blokować.
 - schowek: `xclip` zamiast `wl-clipboard` (fish `copy`/`paste`/`clipsave`
   wybierają narzędzie same, zależnie od sesji).
 
