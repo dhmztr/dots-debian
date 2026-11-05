@@ -1,3 +1,5 @@
 fish/fish_variables
 # per-machine monitor order (see README "Monitory")
 bspwm/monitor-order
+# lazy.nvim writes its lockfile to stdpath("state") (see lazy_setup.lua)
+nvim/lazy-lock.json
