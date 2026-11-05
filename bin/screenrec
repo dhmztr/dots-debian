@@ -4,7 +4,10 @@
 #                                     and is copied to the clipboard
 set -u
 run="${XDG_RUNTIME_DIR:-/tmp}/screenrec-$(id -u)"
-notify() { command -v notify-send >/dev/null && notify-send -t 2500 "Screen recording" "$1"; }
+notify() { command -v notify-send >/dev/null && notify-send -t 2500 "Screen recording" "$1" || true; }
+# every failure is reported (notification + stderr), never a silent exit
+die() { echo "screenrec: $1" >&2; command -v notify-send >/dev/null && notify-send -u critical "Screen recording" "$1"; exit 1; }
+need() { for c; do command -v "$c" >/dev/null || die "missing: $c (sudo apt install $c)"; done; }
 
 # second press: stop the running recording and hand the file over
 if [ -f "$run.pid" ] && kill -0 "$(cat "$run.pid")" 2>/dev/null; then
@@ -31,21 +34,28 @@ fi
 
 mode="${1:-region}"
 extra="${2:-}"
+need ffmpeg
+[ -n "${DISPLAY:-}" ] || die "DISPLAY is not set"
 dir="$HOME/Videos/Recordings"; mkdir -p "$dir"
 file="$dir/$(date +%Y-%m-%d_%H-%M-%S).mp4"
 
 case "$mode" in
     output)  # focused monitor
+        need jq
         geom="$(bspc query -T -m | jq -r '.rectangle | "\(.width) \(.height) \(.x) \(.y)"')" ;;
     *)
+        need slop
         geom="$(slop -f '%w %h %x %y')" || exit 0 ;;   # Esc cancels
 esac
+# shellcheck disable=SC2086 # split "w h x y"
 set -- $geom
+[ "$#" -eq 4 ] || die "no geometry ($mode): '$geom'"
 # libx264 + yuv420p need even dimensions
 w=$(( $1 / 2 * 2 )); h=$(( $2 / 2 * 2 )); x=$3; y=$4
 [ "$w" -gt 0 ] && [ "$h" -gt 0 ] || exit 0
 
 if [ "$extra" = audio ]; then
+    need pactl
     # desktop sound = monitor of the default output (not the mic)
     set -- -f pulse -i "$(pactl get-default-sink).monitor" -c:a aac -b:a 160k
 else
@@ -79,6 +89,8 @@ fi
 if [ -z "$pid" ]; then
     rm -f "$file"
     grab -- -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p
+    sleep 0.5
+    kill -0 "$pid" 2>/dev/null || { rm -f "$file"; die "ffmpeg failed: $(tail -n 2 "$run.log")"; }
 fi
 echo "$pid" > "$run.pid"; echo "$file" > "$run.file"
 # bar indicator on: red dot + timer, click stops (quickshell RecState)
