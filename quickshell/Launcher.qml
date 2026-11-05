@@ -241,6 +241,23 @@ FloatingWindow {
                 }))
         }
 
+        // screen recording actions: "nagr", "rec", "ekran", "wycin" ...
+        if (q.length >= 2) {
+            const recKeys = ["nagr", "record", "rec", "ekran", "screen", "wycin", "region", "stop", "zatrz"]
+            if (recKeys.some(k => k.startsWith(q) || q.startsWith(k))) {
+                const acts = RecState.active
+                    ? [["Zatrzymaj nagrywanie", "stop", "media-playback-stop"]]
+                    : [["Nagraj wycinek", "region", "media-record"],
+                       ["Nagraj cały ekran", "output", "media-record"],
+                       ["Nagraj wycinek z dźwiękiem", "region audio", "audio-input-microphone"]]
+                acts.forEach((x, i) => combinedModel.insert(i, {
+                    label: x[0], sub: "Nagrywanie · screenrec " + (x[1] === "stop" ? "" : x[1]),
+                    iconSrc: Quickshell.iconPath(x[2], "media-record"),
+                    kind: "rec", appIdx: -1, desktopId: "", exec: x[1]
+                }))
+            }
+        }
+
         // Calculator mode
         const mathMatch = q.match(/^[\d\s\+\-\*\/\.\(\)%^]+$/)
         if (mathMatch && q.match(/[\+\-\*\/%^]/)) {
@@ -304,6 +321,14 @@ FloatingWindow {
         if (item.kind === "window") {
             // bspwm switches to the window's desktop/monitor too
             launchProc.command = ["bspc", "node", item.winId, "-f"]
+            launchProc.running = false; launchProc.running = true
+            root.visible = false
+            return
+        }
+        if (item.kind === "rec") {
+            // short delay: the launcher must unmap before slop grabs the pointer
+            const args = item.exec === "stop" ? "" : item.exec
+            launchProc.command = ["setsid", "-f", "sh", "-c", "sleep 0.3; exec screenrec " + args]
             launchProc.running = false; launchProc.running = true
             root.visible = false
             return

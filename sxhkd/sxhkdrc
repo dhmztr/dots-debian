@@ -74,8 +74,10 @@ super + shift + bracketright
     bspc node -z bottom 0 60 || bspc node -z top 0 -60
 
 # ---- screenshots / recording / tools ----------------------------------------
-# region + annotate (arrows, blur, text; flameshot), Print = quick region shot
+# region shot; ctrl variant opens flameshot to annotate (arrows, blur, text)
 super + shift + s
+    shot region
+super + ctrl + shift + s
     flameshot gui || shot region
 Print
     shot region

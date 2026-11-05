@@ -15,6 +15,8 @@ require("lazy").setup({
   { import = "plugins" },
 } --[[@as LazySpec]], {
   -- Configure any other `lazy.nvim` configuration options here
+  -- nvim dir is a symlink into this repo: keep the lockfile out of it
+  lockfile = vim.fn.stdpath("state") .. "/lazy-lock.json",
   install = { colorscheme = { "astrotheme", "habamax" } },
   ui = { backdrop = 100 },
   performance = {

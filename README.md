@@ -40,7 +40,7 @@ sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
 ```
 
 - `unicode-data` + `fonts-noto-color-emoji`: emoji w launcherze (`super+.`).
-- `flameshot`: screenshot z adnotacją (`super+shift+s`), `Print` robi zwykły.
+- `flameshot`: screenshot z adnotacją (`super+ctrl+shift+s`); `super+shift+s` i `Print` robią zwykły.
 - `lazygit`: `spacja gg` w nvimie (config w `lazygit/`).
 
 ## 0.1 quickshell (budowanie ze źródeł)
@@ -202,9 +202,10 @@ Te same co w niri. Pełna lista: `super+s` albo `sxhkd/sxhkdrc`.
 | `super+shift+c` | zamknij okno |
 | `super+t` / `super+f` / `super+m` | floating / fullscreen / monocle |
 | `super+[` `]`, `super+shift+[` `]` | szerokość / wysokość okna |
-| `super+shift+s` | screenshot obszaru z adnotacją (flameshot) |
-| `Print` / `super+ctrl+s` | screenshot obszaru / okna (plik + schowek) |
-| `super+shift+r` / `super+ctrl+r` / `super+alt+r` | nagrywanie obszaru / monitora / obszaru z dźwiękiem; ten sam skrót drugi raz kończy (plik w `~/Videos/Recordings` + schowek). Na pasku czerwona kropka z czasem, klik kończy. Kodowanie na GPU AMD (VAAPI), bez niego x264 |
+| `super+shift+s` / `Print` | screenshot obszaru (plik + schowek) |
+| `super+ctrl+shift+s` | screenshot obszaru z adnotacją (flameshot) |
+| `super+ctrl+s` | screenshot okna (plik + schowek) |
+| `super+shift+r` / `super+ctrl+r` / `super+alt+r` | nagrywanie obszaru / monitora / obszaru z dźwiękiem; ten sam skrót drugi raz kończy (plik w `~/Videos/Recordings` + schowek). Na pasku czerwona kropka z czasem, klik kończy. Kodowanie na GPU AMD (VAAPI), bez niego x264. To samo z launchera: wpisz `nagr` / `rec` → Nagraj wycinek / cały ekran / wycinek z dźwiękiem / Zatrzymaj |
 | `super+shift+t` | OCR obszaru do schowka |
 | `super+p` | pipeta koloru (`grabc`) |
 | `super+.` | emoji w launcherze (albo `:` i nazwa w launcherze) |
