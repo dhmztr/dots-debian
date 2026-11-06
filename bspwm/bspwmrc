@@ -2,6 +2,14 @@
 # bspwm session. No systemd units: everything the session needs is started
 # from here, and re-running this file (super+alt+w reloads it) is safe.
 
+# helper scripts (shot, screenrec, monitors, ...) live in ~/.local/bin.
+# xinitrc adds it only under startx; a display manager session starts bspwm
+# without it, and sxhkd / quickshell inherit this PATH
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
 # sxhkd runs bindings through $SHELL; fish would choke on sh syntax
 export SXHKD_SHELL=/bin/sh
 pgrep -x sxhkd >/dev/null || sxhkd &
