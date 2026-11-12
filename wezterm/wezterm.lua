@@ -7,8 +7,8 @@ local config = wezterm.config_builder()
 
 config.font = wezterm.font 'Maple Mono NF Patched'
 config.font_size = 12
--- tighter letters: 0.9 of the font's advance; 0.85 starts to glue `mm`/`ww`
-config.cell_width = 0.9
+-- letter width comes from the font (condensed by tools/maple-mono-patched.sh);
+-- cell_width < 1 would only shrink the gaps, e.g. 0.95
 
 config.window_background_opacity = 0.9 -- only with a compositor (picom)
 config.window_decorations = 'NONE'

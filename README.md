@@ -103,7 +103,10 @@ Skrypt pobiera Maple Mono NF (v7.9), na stałe wypala w niej warianty
 `cv04` (proste `l` z belką zamiast ogonka wyglądającego jak `L`) i `cv35`
 (italic `l` bez pętelki, bez łączonych ligatur `el`/`ll`), po czym instaluje
 ją jako rodzinę `Maple Mono NF Patched` do
-`~/.local/share/fonts/maple-mono-patched`. Wymaga `curl`, `unzip`,
+`~/.local/share/fonts/maple-mono-patched`. Glify są też zwężone w poziomie
+(`MAPLE_CONDENSE`, domyślnie `0.88`: 528 zamiast 600 jednostek, Iosevka ma 500;
+`1` = oryginalna szerokość), bo węższe warianty Maple są dopiero w
+niewydanej v8. Wymaga `curl`, `unzip`,
 `python3-venv` i `fontconfig`. Inne warianty:
 `MAPLE_FEATURES=cv04,cv35,cv01 ~/dots/tools/maple-mono-patched.sh`
 (lista w [OpenType Features](https://github.com/subframe7536/maple-font/blob/variable/documentation/opentype-features.md)).
@@ -122,10 +125,6 @@ sudo apt update && sudo apt install wezterm
 Alternatywa: `.deb` dla Debiana 12 z
 [releases](https://github.com/wezterm/wezterm/releases) albo
 [wezterm.org/install/linux](https://wezterm.org/install/linux.html).
-
-Litery są ciaśniej niż w samej czcionce: `config.cell_width = 0.9` w
-`wezterm/wezterm.lua` (1.0 = oryginalny odstęp, przy 0.85 `mm`/`ww` zaczynają
-się sklejać).
 
 ## 4. Rust i narzędzia z cargo
 
