@@ -4,13 +4,13 @@
 
 # ---- apps -------------------------------------------------------------------
 super + Return
-    ghostty
+    wezterm
 super + q
     librewolf || firefox-esr
 super + r
     quickshell ipc call launcher toggle
 super + s
-    ghostty --title=keys -e less "$HOME/.config/sxhkd/sxhkdrc"
+    wezterm start --class keys -- less "$HOME/.config/sxhkd/sxhkdrc"
 
 # ---- session ----------------------------------------------------------------
 super + shift + e

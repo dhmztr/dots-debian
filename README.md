@@ -2,7 +2,7 @@
 
 Setup z NixOS (`nix-dots`) przeniesiony na Debiana 13: **bspwm + sxhkd**
 (X11) z tymi samymi skrótami co niri, **quickshell** (pasek + launcher),
-**fish**, **ghostty**, **neovim** (AstroNvim). Bez Nixa, wallusta, tapet,
+**fish**, **wezterm**, **neovim** (AstroNvim). Bez Nixa, wallusta, tapet,
 dashboardu i file managera. Nic nie zależy od jednostek systemd: sesja
 startuje z `startx`, a wszystko inne odpala `bspwmrc`. Paleta kolorów
 (Rosé Pine) jest stała.
@@ -17,7 +17,7 @@ quickshell/          -> ~/.config/quickshell (pasek + launcher)
 bin/                 -> ~/.local/bin       (monitors, shot, screenrec, ocr-clip, touchpad-toggle)
 xinitrc              -> ~/.xinitrc         (kopiowany, tylko gdy go nie ma)
 fish/      -> ~/.config/fish
-ghostty/   -> ~/.config/ghostty
+wezterm/   -> ~/.config/wezterm
 nvim/      -> ~/.config/nvim
 wal/       -> ~/.cache/wal/colors-wal.vim   (paleta dla motywu nvim)
 install.sh    linkuje powyższe, robi kopie zapasowe istniejących configów
@@ -103,25 +103,28 @@ Skrypt pobiera Maple Mono NF (v7.9), na stałe wypala w niej warianty
 `cv04` (proste `l` z belką zamiast ogonka wyglądającego jak `L`) i `cv35`
 (italic `l` bez pętelki, bez łączonych ligatur `el`/`ll`), po czym instaluje
 ją jako rodzinę `Maple Mono NF Patched` do
-`~/.local/share/fonts/maple-mono-patched`. Wymaga `curl`, `unzip`,
+`~/.local/share/fonts/maple-mono-patched`. Glify są też zwężone w poziomie
+(`MAPLE_CONDENSE`, domyślnie `0.88`: 528 zamiast 600 jednostek, Iosevka ma 500;
+`1` = oryginalna szerokość), bo węższe warianty Maple są dopiero w
+niewydanej v8. Wymaga `curl`, `unzip`,
 `python3-venv` i `fontconfig`. Inne warianty:
 `MAPLE_FEATURES=cv04,cv35,cv01 ~/dots/tools/maple-mono-patched.sh`
 (lista w [OpenType Features](https://github.com/subframe7536/maple-font/blob/variable/documentation/opentype-features.md)).
 
-## 3. Ghostty
+## 3. WezTerm
 
-Debian nie ma ghostty w repo, a projekt nie wydaje oficjalnych paczek `.deb`.
-Najprościej przez nieoficjalne paczki
-[mkasberg/ghostty-ubuntu](https://github.com/mkasberg/ghostty-ubuntu)
-(wspiera Debian Trixie):
+Debian nie ma wezterma w repo. Oficjalne repo apt projektu:
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)"
+curl -fsSL https://apt.fury.io/wez/gpg.key | sudo gpg --yes --dearmor -o /usr/share/keyrings/wezterm-fury.gpg
+echo 'deb [signed-by=/usr/share/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *' | sudo tee /etc/apt/sources.list.d/wezterm.list
+sudo chmod 644 /usr/share/keyrings/wezterm-fury.gpg
+sudo apt update && sudo apt install wezterm
 ```
 
-Alternatywa: budowanie ze źródeł wg
-[ghostty.org/docs/install/build](https://ghostty.org/docs/install/build)
-(wymaga Ziga w wersji podanej w dokumentacji).
+Alternatywa: `.deb` dla Debiana 12 z
+[releases](https://github.com/wezterm/wezterm/releases) albo
+[wezterm.org/install/linux](https://wezterm.org/install/linux.html).
 
 ## 4. Rust i narzędzia z cargo
 
@@ -196,7 +199,7 @@ Te same co w niri. Pełna lista: `super+s` albo `sxhkd/sxhkdrc`.
 
 | skrót | akcja |
 | --- | --- |
-| `super+Return` / `super+q` | ghostty / librewolf (albo firefox-esr) |
+| `super+Return` / `super+q` | wezterm / librewolf (albo firefox-esr) |
 | `super+r` | launcher (aplikacje, otwarte okna, kalkulator `2*21`, emoji po `:`, pliki w `~`) |
 | `super+h/l`, `super+←/→/↑/↓` | fokus okna |
 | `super+k/j`, `super+Tab` | poprzedni / następny / ostatni pulpit |
@@ -276,12 +279,12 @@ Patched (krok 2).
 
 Paleta jest w dwóch miejscach, które trzeba trzymać zgodne:
 
-- `ghostty/config`: `background`, `foreground`, `cursor-color`, `palette = 0..15`
+- `wezterm/wezterm.lua`: `colors` (`background`, `foreground`, `cursor_*`, `ansi`, `brights`)
 - `wal/colors-wal.vim`: te same wartości dla motywu nvim (neopywal)
 
 Domyślnie jest Rosé Pine (paleta wallusta z setupu NixOS). Po zmianie `wal/colors-wal.vim` uruchom
 ponownie `./install.sh`, bo kopiuje on paletę do `~/.cache/wal/`. Działający
-nvim przeładuje motyw sam. Ghostty przeładuje config po `ctrl+shift+,`.
+nvim przeładuje motyw sam. WezTerm przeładowuje config sam po zapisie.
 
 ## Różnice względem `main` (NixOS)
 
@@ -294,7 +297,7 @@ nvim przeładuje motyw sam. Ghostty przeładuje config po `ctrl+shift+,`.
   json/yaml/toml/markdown/fish, obsidian.nvim (sam znajduje vaulty
   Obsidiana), render-markdown, flash (`s`), yazi (`<Leader>-`), oil
   (`<Leader>O`), diffview, trouble (`<Leader>x`), todo-comments, grug-far.
-- ghostty: stała paleta zamiast generowanej przez wallust.
+- ghostty -> wezterm, stała paleta zamiast generowanej przez wallust.
 - niri -> bspwm (X11). Brak kompozytora, więc nie ma przezroczystości ani
   cieni; pasek i launcher są nieprzezroczyste. Jeśli chcesz, doinstaluj
   `picom` i dopisz `picom -b` w `bspwmrc`.

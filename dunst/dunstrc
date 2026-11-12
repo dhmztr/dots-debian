@@ -1,5 +1,5 @@
 # Notifications (Slack, screenshots, recording, OCR). Started by bspwmrc.
-# Rosé Pine, same palette as ghostty / quickshell.
+# Rosé Pine, same palette as wezterm / quickshell.
 
 [global]
     monitor = 0

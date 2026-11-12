@@ -1,7 +1,7 @@
 pragma Singleton
 import QtQuick
 
-// Rosé Pine, same values as ghostty/config and wal/colors-wal.vim
+// Rosé Pine, same values as wezterm/wezterm.lua and wal/colors-wal.vim
 QtObject {
     readonly property color background: "#191724"
     readonly property color surface:    "#1f1d2e"

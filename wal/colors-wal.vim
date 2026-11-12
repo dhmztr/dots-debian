@@ -1,5 +1,5 @@
 " Palette for the neopywal nvim colorscheme (installed to ~/.cache/wal/).
-" Keep in sync with ghostty/config. Rosé Pine (wallust palette from the NixOS setup).
+" Keep in sync with wezterm/wezterm.lua. Rosé Pine (wallust palette from the NixOS setup).
 let background = "#191724"
 let foreground = "#e0def4"
 let cursor = "#e0def4"

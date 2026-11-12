@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Links fish, ghostty, nvim, bspwm, sxhkd and quickshell configs from this repo
+# Links fish, wezterm, nvim, bspwm, sxhkd and quickshell configs from this repo
 # into ~/.config, the helper scripts into ~/.local/bin, and puts the nvim
 # palette in ~/.cache/wal. Existing configs are moved to *.bak-<date>.
 set -euo pipefail
@@ -23,7 +23,7 @@ link() { # link <repo path> <target>
 }
 
 link fish    "$HOME/.config/fish"
-link ghostty "$HOME/.config/ghostty"
+link wezterm "$HOME/.config/wezterm"
 link nvim    "$HOME/.config/nvim"
 link bspwm      "$HOME/.config/bspwm"
 link sxhkd      "$HOME/.config/sxhkd"

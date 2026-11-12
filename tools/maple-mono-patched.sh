@@ -5,13 +5,17 @@
 #         right-hooked tail that reads like an `L` (else, elif, all ...)
 #   cv35  italic `l` without the cursive loop; this also stops the italic
 #         `el` / `ll` / `al` ... connected-stroke ligatures
-# Freezing remaps the cmap, so it works everywhere (ghostty, quickshell,
+# Freezing remaps the cmap, so it works everywhere (wezterm, quickshell,
 # dunst), not only in apps that let you turn OpenType features on.
+# Glyphs are also condensed horizontally (MAPLE_CONDENSE, default 0.88:
+# 600 -> 528 units wide; Iosevka is 500), since the narrow/slim widths only
+# exist in the unreleased v8. 1 keeps the original width.
 # Re-run to update; it replaces ~/.local/share/fonts/maple-mono-patched.
 set -euo pipefail
 
 version="${MAPLE_VERSION:-v7.9}"
 features="${MAPLE_FEATURES:-cv04,cv35}"
+condense="${MAPLE_CONDENSE:-0.88}"
 url="https://github.com/subframe7536/maple-font/releases/download/$version/MapleMono-NF-unhinted.zip"
 dest="$HOME/.local/share/fonts/maple-mono-patched"
 
@@ -37,13 +41,63 @@ for f in "$work"/src/MapleMono-NF-*.ttf; do
     echo "patched   $name"
 done
 
-# rename family + PostScript names so it never clashes with a stock
-# Maple Mono NF install
-"$work/venv/bin/python" - "$work"/out/*.ttf <<'EOF'
+# condense horizontally, then rename family + PostScript names so it never
+# clashes with a stock Maple Mono NF install
+echo "condense  x$condense"
+"$work/venv/bin/python" - "$condense" "$work"/out/*.ttf <<'EOF'
 import sys
 from fontTools.ttLib import TTFont
-for path in sys.argv[1:]:
+
+X_ATTRS = ("XCoordinate", "XPlacement", "XAdvance", "Coordinate")
+
+def scale_ot(obj, f, seen):
+    # x values in GPOS (anchors, placements, advances) and GDEF carets
+    if obj is None or id(obj) in seen:
+        return
+    seen.add(id(obj))
+    if isinstance(obj, list):
+        for o in obj:
+            scale_ot(o, f, seen)
+        return
+    if not hasattr(obj, "__dict__"):
+        return
+    for k, v in list(vars(obj).items()):
+        if k in X_ATTRS and isinstance(v, int):
+            setattr(obj, k, round(v * f))
+        elif hasattr(v, "__dict__") or isinstance(v, list):
+            scale_ot(v, f, seen)
+
+def condense(font, f):
+    glyf, hmtx = font["glyf"], font["hmtx"]
+    order = font.getGlyphOrder()
+    for name in order:
+        g = glyf[name]
+        if g.isComposite():
+            for c in g.components:
+                c.x = round(c.x * f)
+        elif g.numberOfContours > 0:
+            g.coordinates.scale((f, 1))
+            g.coordinates.toInt()
+        hmtx[name] = (round(hmtx[name][0] * f), hmtx[name][1])
+    for name in order:  # bounds after all simple glyphs are scaled
+        g = glyf[name]
+        g.recalcBounds(glyf)
+        hmtx[name] = (hmtx[name][0], getattr(g, "xMin", 0))
+    if "GPOS" in font:
+        scale_ot(font["GPOS"].table, f, set())
+    if "GDEF" in font and font["GDEF"].table.LigCaretList:
+        scale_ot(font["GDEF"].table.LigCaretList, f, set())
+    font["OS/2"].xAvgCharWidth = round(font["OS/2"].xAvgCharWidth * f)
+    font["hhea"].advanceWidthMax = max(a for a, _ in hmtx.metrics.values())
+    for t in ("hdmx", "LTSH", "VDMX"):  # device metrics no longer valid
+        if t in font:
+            del font[t]
+
+factor = float(sys.argv[1])
+for path in sys.argv[2:]:
     font = TTFont(path)
+    if factor != 1:
+        condense(font, factor)
     for rec in font["name"].names:
         s = rec.toUnicode()
         s = s.replace("Maple Mono NF", "Maple Mono NF Patched")
