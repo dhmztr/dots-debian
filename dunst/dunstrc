@@ -16,7 +16,7 @@
     frame_color = "#c4a7e7"
     separator_color = frame
     corner_radius = 0
-    font = Iosevka Nerd Font 11
+    font = Maple Mono NF Patched 11
     markup = full
     format = "<b>%s</b>\n%b"
     icon_position = left
