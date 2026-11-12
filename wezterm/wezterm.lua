@@ -5,10 +5,8 @@
 local wezterm = require 'wezterm'
 local config = wezterm.config_builder()
 
-config.font = wezterm.font 'Maple Mono NF Patched'
+config.font = wezterm.font 'Iosevka Nerd Font'
 config.font_size = 12
--- letter width comes from the font (condensed by tools/maple-mono-patched.sh);
--- cell_width < 1 would only shrink the gaps, e.g. 0.95
 
 config.window_background_opacity = 0.9 -- only with a compositor (picom)
 -- no title bar and no tab bar at the top (ghostty had neither)
