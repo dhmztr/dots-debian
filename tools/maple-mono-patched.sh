@@ -5,7 +5,7 @@
 #         right-hooked tail that reads like an `L` (else, elif, all ...)
 #   cv35  italic `l` without the cursive loop; this also stops the italic
 #         `el` / `ll` / `al` ... connected-stroke ligatures
-# Freezing remaps the cmap, so it works everywhere (ghostty, quickshell,
+# Freezing remaps the cmap, so it works everywhere (wezterm, quickshell,
 # dunst), not only in apps that let you turn OpenType features on.
 # Re-run to update; it replaces ~/.local/share/fonts/maple-mono-patched.
 set -euo pipefail
