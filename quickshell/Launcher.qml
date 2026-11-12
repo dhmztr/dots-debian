@@ -402,7 +402,7 @@ FloatingWindow {
                             id: chipLbl
                             anchors.centerIn: parent
                             text: modelData
-                            font.family: "Iosevka Nerd Font"; font.pixelSize: 11
+                            font.family: "Maple Mono NF Patched"; font.pixelSize: 11
                             color: root.activeCategory === modelData ? Colors.background : Colors.foreground
                         }
                         MouseArea {
@@ -430,14 +430,14 @@ FloatingWindow {
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "\uF002"
-                        font.family: "Iosevka Nerd Font"; font.pixelSize: 14
+                        font.family: "Maple Mono NF Patched"; font.pixelSize: 14
                         color: Colors.muted
                     }
                     TextInput {
                         id: searchInput
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width - 34
-                        font.pixelSize: 14; font.family: "Iosevka Nerd Font"
+                        font.pixelSize: 14; font.family: "Maple Mono NF Patched"
                         color: Colors.foreground
                         selectionColor: Colors.purple
                         onTextChanged: filterApps(text)
@@ -487,7 +487,7 @@ FloatingWindow {
                                 spacing: 6
                                 Text {
                                     text: modelData.label || ""
-                                    font.pixelSize: 13; font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: 13; font.family: "Maple Mono NF Patched"
                                     color: resultsList.currentIndex === index ? Colors.background : Colors.foreground
                                 }
                                 // flatpak badge - small pill so user knows what'll run
@@ -500,7 +500,7 @@ FloatingWindow {
                                         id: fpText
                                         anchors.centerIn: parent
                                         text: "FLATPAK"
-                                        font.pixelSize: 8; font.family: "Iosevka Nerd Font"; font.bold: true
+                                        font.pixelSize: 8; font.family: "Maple Mono NF Patched"; font.bold: true
                                         color: Colors.rose
                                     }
                                 }

@@ -14,5 +14,5 @@ QtObject {
     readonly property color purple:     "#c4a7e7"
     readonly property color rose:       "#ebbcba"
 
-    readonly property string font: "Iosevka Nerd Font"
+    readonly property string font: "Maple Mono NF Patched"
 }
