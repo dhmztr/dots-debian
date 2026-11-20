@@ -1,11 +1,13 @@
-# Notifications (Slack, screenshots, recording, OCR). Started by bspwmrc.
+# Notifications (Slack, screenshots, recording, OCR). Started by
+# ~/.config/xmonad/autostart.
 # Rosé Pine, same palette as wezterm / quickshell.
 
 [global]
     monitor = 0
     follow = mouse
     origin = top-right
-    offset = (12, 12)
+    # below the top bar
+    offset = (12, 54)
     width = 360
     height = (0, 200)
     notification_limit = 5
@@ -15,7 +17,7 @@
     frame_width = 2
     frame_color = "#c4a7e7"
     separator_color = frame
-    corner_radius = 0
+    corner_radius = 10
     font = Iosevka Nerd Font 11
     markup = full
     format = "<b>%s</b>\n%b"
@@ -43,3 +45,8 @@
     foreground = "#e0def4"
     frame_color = "#eb6f92"
     timeout = 0
+
+# every Slack notification bumps the unread counter on the bar's Slack button
+[slack]
+    appname = "[Ss]lack"
+    script = ~/.config/dunst/slack-count
