@@ -179,7 +179,10 @@ chsh -s "$(command -v fish)"     # fish jako domyślna powłoka (po relogowaniu)
 Start sesji: zaloguj się na tty i wpisz `startx`. `~/.xinitrc` uruchamia
 xmonada (w `dbus-run-session`, gdy nie ma sesyjnego D-Bus, np. bez systemd).
 Jeśli `~/.xinitrc` został z bspwm, zamień w nim `bspwm` na `xmonad`
-(`install.sh` o tym przypomina).
+(`install.sh` o tym przypomina). Wystarczy też samo `exec xmonad`: xmonad
+sam dopisuje `~/.local/bin` do `PATH` i, gdy nie ma sesyjnego D-Bus,
+uruchamia się ponownie w `dbus-run-session` (bez tego nie działały skróty
+do zrzutów, nagrywania i flameshota).
 Autostart bez display managera, na końcu `~/.config/fish/config.fish`:
 
 ```fish
@@ -197,7 +200,10 @@ kilka minut.
 
 ## Skróty (super = klawisz Windows)
 
-Pełna lista: `super+s` (otwiera `xmonad.hs`, sekcja `myKeys`).
+Pełna lista: `super+s` otwiera okno ze wszystkimi skrótami pogrupowanymi
+w sekcje, z wyszukiwarką (wpisz np. `zrzut`; Esc zamyka). Źródło:
+`quickshell/Help.qml`, przy zmianie skrótów w `xmonad.hs` (`myKeys`)
+popraw też tam.
 
 | skrót | akcja |
 | --- | --- |
@@ -216,7 +222,7 @@ Pełna lista: `super+s` (otwiera `xmonad.hs`, sekcja `myKeys`).
 | `super+u` | skocz do okna, które woła o uwagę |
 | `super+shift+c` | zamknij okno |
 | `super+t` / `super+f` | floating / fullscreen (chowa pasek) |
-| `super+m` / `super+space` | następny layout: tall → wide → cols → full |
+| `super+m` / `super+space` | następny layout: tall → wide → cols → full (nazwa wyskakuje na środku ekranu) |
 | `super+shift+space` | layout z powrotem na tall |
 | `super+g` | odstępy między oknami on/off |
 | `super+[` `]` / `super+shift+[` `]` | szerokość mastera / wysokość okna w stosie |
@@ -244,7 +250,8 @@ Na górze każdego ekranu, „wyspy” z zaokrąglonymi rogami:
 - **lewo**: logo Debiana (klik: launcher), workspace'y z ikonami okien,
   które na nich są (aktywny na tym ekranie podświetlony i szerszy,
   widoczny na innym monitorze z obwódką, wołający o uwagę na czerwono;
-  klik przełącza), layout (klik: następny, prawy klik: tall).
+  klik przełącza). Layoutu nie ma na stałe: po zmianie skrótem jego nazwa
+  i ikona wyskakują na sekundę na środku ekranu.
 - **środek**: aktywne okno, ikona + tytuł (na ekranie z fokusem).
 - **prawo**: nagrywanie, Slack, głośność (scroll zmienia, klik wycisza,
   prawy klik: pavucontrol), bateria (tylko na laptopie), tray, zegar
