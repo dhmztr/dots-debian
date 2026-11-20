@@ -20,7 +20,8 @@ FloatingWindow {
             { keys: ["super+Return"], desc: "terminal (wezterm)" },
             { keys: ["super+q"], desc: "przeglądarka" },
             { keys: ["super+r"], desc: "launcher: aplikacje, okna, kalkulator, pliki" },
-            { keys: ["super+n"], desc: "Slack (przełącz albo uruchom)" },
+            { keys: ["super+n"], desc: "nowe okno wezterma w tym samym katalogu" },
+            { keys: ["super+shift+n"], desc: "Slack (przełącz albo uruchom)" },
             { keys: ["super+`", "super+'"], desc: "terminal scratchpad (wysuwa / chowa)" },
             { keys: ["super+b"], desc: "btop scratchpad" },
             { keys: ["super+s"], desc: "ta pomoc" }

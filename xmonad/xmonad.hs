@@ -117,7 +117,9 @@ myKeys =
   , ("M-q", spawn "librewolf || firefox-esr")
   , ("M-r", spawn "quickshell ipc call launcher toggle")
   , ("M-s", spawn "quickshell ipc call help toggle")
-  , ("M-n", raiseMaybe (spawn "slack") (className =? "Slack")) -- Slack: focus or start
+  -- Slack: focus or start. super+n itself stays free: wezterm opens a new
+  -- window in the current directory with it
+  , ("M-S-n", raiseMaybe (spawn "slack") (className =? "Slack"))
   , ("M-`", namedScratchpadAction scratchpads "term")
   , ("M-'", namedScratchpadAction scratchpads "term")
   , ("M-b", namedScratchpadAction scratchpads "btop")
