@@ -13,7 +13,10 @@ esac
 # ---- monitors / X input -----------------------------------------------------
 "$HOME/.local/bin/monitors"
 setxkbmap pl -option caps:escape
-xsetroot -cursor_name left_ptr -solid "#191724"
+xsetroot -cursor_name left_ptr
+# background colour: hsetroot sets _XROOTPMAP_ID, which picom draws; with
+# plain `xsetroot -solid` the desktop is black under picom
+hsetroot -solid "#191724" 2>/dev/null || xsetroot -solid "#191724"
 # touchpad: tap to click + natural scroll (libinput)
 xinput list --name-only 2>/dev/null | grep -i touchpad | while read -r dev; do
     xinput set-prop "$dev" "libinput Tapping Enabled" 1 2>/dev/null

@@ -32,9 +32,10 @@ import XMonad.Layout.ThreeColumns (ThreeCol (..))
 import XMonad.Util.EZConfig (mkKeymap)
 import XMonad.Util.NamedScratchpad
 
-import Control.Monad (forM)
+import Control.Monad (forM, when)
 import Data.Char (ord, toLower)
 import Data.List (elemIndex, intercalate, sortOn)
+import Data.Monoid (All (..))
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, listToMaybe)
 import System.Exit (exitSuccess)
@@ -211,6 +212,24 @@ myMouse c =
     ]
     <> mouseBindings def c
 
+-- ---- focus follows the mouse onto empty monitors -----------------------------
+-- xmonad only changes screen when the pointer enters a window, so on an empty
+-- monitor the focus (and every new window) stayed on the previous one. With
+-- pointer motion selected on the root window (rootMask in main), moving over
+-- the bare desktop of another monitor focuses that monitor.
+
+screenUnderMouse :: Event -> X All
+screenUnderMouse MotionEvent {ev_window = w, ev_x = x, ev_y = y} = do
+  root <- asks theRoot
+  when (w == root) $ do
+    under <- pointScreen (fromIntegral x) (fromIntegral y)
+    cur <- gets (W.screen . W.current . windowset)
+    case under of
+      Just s | W.screen s /= cur -> windows (W.view (W.tag (W.workspace s)))
+      _ -> pure ()
+  pure (All True)
+screenUnderMouse _ = pure (All True)
+
 -- ---- bar state ---------------------------------------------------------------
 -- Published as JSON in the _XMONAD_LOG property of the root window on every
 -- change; quickshell reads it with `xprop -spy` (quickshell/Xmonad.qml).
@@ -307,6 +326,8 @@ main =
       , keys = (`mkKeymap` myKeys)
       , mouseBindings = myMouse
       , logHook = barLog
+      , handleEventHook = screenUnderMouse
+      , rootMask = rootMask def .|. pointerMotionMask
       , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs
         startupHook = setWMName "LG3D" >> spawn "\"$HOME/.config/xmonad/autostart\""
       }
