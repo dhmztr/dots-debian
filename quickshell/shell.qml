@@ -1,6 +1,7 @@
 //@ pragma UseQApplication
 //@ pragma IconTheme Papirus-Dark
-// Shell for xmonad (X11): top bar on every screen + app launcher.
+// Shell for xmonad (X11): top bar on every screen, app launcher, key
+// overview (super+s) and the layout pop-up.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -10,7 +11,18 @@ ShellRoot {
         model: Quickshell.screens
         Bar {}
     }
+    Variants {
+        model: Quickshell.screens
+        LayoutOsd {}
+    }
     Launcher {}
+    Help {}
+
+    // xmonad's layout keys: `quickshell ipc call osd layout <name>`
+    IpcHandler {
+        target: "osd"
+        function layout(name: string): void { Osd.showLayout(name) }
+    }
 
     // super+alt+w: reload the config in place. Killing the process instead
     // would drop the tray (StatusNotifierWatcher) and apps like Slack only

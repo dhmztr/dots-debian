@@ -7,7 +7,7 @@
 --   ~/.config/quickshell/        top bar + launcher; reads the state that
 --                                barLog (bottom of this file) publishes
 --
--- super+s shows this file. Keys are in `myKeys`.
+-- super+s opens the key overview (quickshell/Help.qml). Keys are in `myKeys`.
 
 import XMonad
 import qualified XMonad.StackSet as W
@@ -32,13 +32,17 @@ import XMonad.Layout.ThreeColumns (ThreeCol (..))
 import XMonad.Util.EZConfig (mkKeymap)
 import XMonad.Util.NamedScratchpad
 
-import Control.Monad (forM, when)
+import Control.Exception (SomeException, try)
+import Control.Monad (forM, unless, when)
 import Data.Char (ord, toLower)
 import Data.List (elemIndex, intercalate, sortOn)
 import Data.Monoid (All (..))
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, listToMaybe)
+import System.Directory (doesPathExist)
+import System.Environment (lookupEnv, setEnv)
 import System.Exit (exitSuccess)
+import System.Posix.Process (executeFile)
 import Text.Printf (printf)
 
 -- ---- look --------------------------------------------------------------------
@@ -53,8 +57,8 @@ myWorkspaces = map show [1 .. 9 :: Int]
 
 -- ---- layouts -----------------------------------------------------------------
 -- tall: master left, stack right | wide: master on top | cols: master in the
--- middle | full: one window at a time. super+m / super+space cycles them, the
--- bar shows the current one (click it to cycle too).
+-- middle | full: one window at a time. super+m / super+space cycles them; the
+-- new layout's name pops up in the middle of the screen (layoutOsd).
 
 myLayout =
   avoidStruts . mkToggle (single NBFULL) . smartBorders . gaps $
@@ -86,7 +90,7 @@ myManageHook :: ManageHook
 myManageHook =
   composeAll
     [ title =? "qs-launcher" --> doFullFloat -- quickshell launcher overlay
-    , className =? "keys" --> doCenterFloat -- super+s
+    , title =? "qs-help" --> doFullFloat -- quickshell key overview (super+s)
     , className =? "Pavucontrol" --> doCenterFloat
     , className =? "pavucontrol" --> doCenterFloat
     , className =? "Blueman-manager" --> doCenterFloat
@@ -106,7 +110,7 @@ myKeys =
   [ ("M-<Return>", spawn "wezterm")
   , ("M-q", spawn "librewolf || firefox-esr")
   , ("M-r", spawn "quickshell ipc call launcher toggle")
-  , ("M-s", spawn "wezterm start --class keys -- less \"$HOME/.config/xmonad/xmonad.hs\"")
+  , ("M-s", spawn "quickshell ipc call help toggle")
   , ("M-n", raiseMaybe (spawn "slack") (className =? "Slack")) -- Slack: focus or start
   , ("M-<grave>", namedScratchpadAction scratchpads "term")
   , ("M-b", namedScratchpadAction scratchpads "btop")
@@ -140,10 +144,10 @@ myKeys =
   , -- windows
     ("M-S-c", kill)
   , ("M-t", toggleFloat)
-  , ("M-f", sendMessage (Toggle NBFULL) >> sendMessage ToggleStruts)
-  , ("M-m", sendMessage NextLayout)
-  , ("M-<Space>", sendMessage NextLayout)
-  , ("M-S-<Space>", asks (layoutHook . config) >>= setLayout)
+  , ("M-f", layoutOsd $ sendMessage (Toggle NBFULL) >> sendMessage ToggleStruts)
+  , ("M-m", layoutOsd $ sendMessage NextLayout)
+  , ("M-<Space>", layoutOsd $ sendMessage NextLayout)
+  , ("M-S-<Space>", layoutOsd $ asks (layoutHook . config) >>= setLayout)
   , ("M-g", toggleScreenSpacingEnabled >> toggleWindowSpacingEnabled)
   , ("M-<bracketleft>", sendMessage Shrink)
   , ("M-<bracketright>", sendMessage Expand)
@@ -152,16 +156,18 @@ myKeys =
   , ("M-<equal>", sendMessage (IncMasterN 1))
   , ("M-<minus>", sendMessage (IncMasterN (-1)))
   , -- screenshots / recording / tools
-    ("M-S-s", spawn "shot region")
-  , ("M-C-S-s", spawn "flameshot gui || shot region")
-  , ("<Print>", spawn "shot region")
+    -- (`grab`: wait a moment so the selection tools are not fighting the
+    -- key that is still held down, or each other on key repeat)
+    ("M-S-s", grab "shot region")
+  , ("M-C-S-s", grab "flameshot gui || shot region")
+  , ("<Print>", grab "shot region")
   , ("M-C-s", spawn "shot window")
-  , ("M-S-r", spawn "screenrec region")
+  , ("M-S-r", grab "screenrec region")
   , ("M-C-r", spawn "screenrec output")
-  , ("M-M1-r", spawn "screenrec region audio")
-  , ("M-p", spawn "grabc 2>/dev/null | tr -d '\\n' | xclip -selection clipboard")
+  , ("M-M1-r", grab "screenrec region audio")
+  , ("M-p", grab "grabc 2>/dev/null | tr -d '\\n' | xclip -selection clipboard")
   , ("M-<Period>", spawn "quickshell ipc call launcher emoji")
-  , ("M-S-t", spawn "ocr-clip")
+  , ("M-S-t", grab "ocr-clip")
   , ("M-S-a", spawn "pkill -x pw-loopback || pw-loopback")
   , -- media keys
     ("<XF86AudioRaiseVolume>", spawn "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+")
@@ -193,6 +199,22 @@ myKeys =
     reload =
       "monitors; xmonad --recompile && xmonad --restart;"
         ++ " quickshell ipc call shell reload || setsid -f quickshell >/dev/null 2>&1"
+
+-- selection tools (slop, maim -s, flameshot, grabc) grab the pointer and
+-- keyboard; start them once the shortcut is released
+grab :: String -> X ()
+grab cmd = spawn ("sleep 0.25; " ++ cmd)
+
+-- run a layout change, then show the new layout's name on screen
+layoutOsd :: X () -> X ()
+layoutOsd act = do
+  act
+  name <- gets (layoutName . W.workspace . W.current . windowset)
+  spawn ("quickshell ipc call osd layout " ++ name)
+
+-- "Spacing tall" -> "tall"; the fullscreen toggle reports "Full"
+layoutName :: W.Workspace WorkspaceId (Layout Window) Window -> String
+layoutName = maybe "" (map toLower) . listToMaybe . reverse . words . description . W.layout
 
 toggleFloat :: X ()
 toggleFloat = withFocused $ \w -> do
@@ -276,10 +298,6 @@ barLog = do
       , ("screens", jarr (map screen (W.screens ws)))
       , ("workspaces", jarr wsJson)
       ]
-  where
-    -- "Spacing tall" -> "tall"; the fullscreen toggle reports "Full"
-    layoutName = maybe "" (map toLower) . lastMaybe . words . description . W.layout
-    lastMaybe xs = listToMaybe (reverse xs)
 
 obj :: [(String, String)] -> String
 obj kvs = "{" ++ intercalate "," [jstr k ++ ":" ++ v | (k, v) <- kvs] ++ "}"
@@ -304,30 +322,56 @@ jstr s = "\"" ++ concatMap esc s ++ "\""
 
 -- ---- main --------------------------------------------------------------------
 
+-- The session must not depend on how xmonad was started (startx with or
+-- without ~/.xinitrc, a display manager, ...):
+--  * ~/.local/bin (shot, screenrec, monitors, ...) goes on PATH for every
+--    program xmonad starts
+--  * without a session D-Bus (flameshot, notifications, the tray need it)
+--    xmonad re-executes itself under dbus-run-session; a systemd user bus
+--    ($XDG_RUNTIME_DIR/bus) counts as one
+sessionEnv :: IO ()
+sessionEnv = do
+  home <- fromMaybe "" <$> lookupEnv "HOME"
+  path <- fromMaybe "/usr/local/bin:/usr/bin:/bin" <$> lookupEnv "PATH"
+  let bin = home ++ "/.local/bin"
+  unless (bin `elem` splitPath path) $ setEnv "PATH" (bin ++ ":" ++ path)
+  bus <- lookupEnv "DBUS_SESSION_BUS_ADDRESS"
+  runtime <- lookupEnv "XDG_RUNTIME_DIR"
+  userBus <- maybe (pure False) (doesPathExist . (++ "/bus")) runtime
+  when (maybe True null bus && not userBus) $ do
+    -- only returns if dbus-run-session is missing: carry on without a bus
+    _ <- try (executeFile "dbus-run-session" True ["--", "xmonad"] Nothing) :: IO (Either SomeException ())
+    pure ()
+  where
+    splitPath p = case break (== ':') p of
+      (a, []) -> [a]
+      (a, _ : rest) -> a : splitPath rest
+
 main :: IO ()
-main =
+main = do
+  sessionEnv
   xmonad
-    . ewmhFullscreen
-    . ewmh
-    . docks
-    . withUrgencyHook NoUrgencyHook
-    . withNavigation2DConfig def
-    $ def
-      { modMask = mod4Mask
-      , terminal = "wezterm"
-      , workspaces = myWorkspaces
-      , borderWidth = 2
-      , normalBorderColor = colBorder
-      , focusedBorderColor = colFocused
-      , focusFollowsMouse = True
-      , clickJustFocuses = False
-      , layoutHook = myLayout
-      , manageHook = myManageHook
-      , keys = (`mkKeymap` myKeys)
-      , mouseBindings = myMouse
-      , logHook = barLog
-      , handleEventHook = screenUnderMouse
-      , rootMask = rootMask def .|. pointerMotionMask
-      , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs
-        startupHook = setWMName "LG3D" >> spawn "\"$HOME/.config/xmonad/autostart\""
-      }
+      . ewmhFullscreen
+      . ewmh
+      . docks
+      . withUrgencyHook NoUrgencyHook
+      . withNavigation2DConfig def
+      $ def
+        { modMask = mod4Mask
+        , terminal = "wezterm"
+        , workspaces = myWorkspaces
+        , borderWidth = 2
+        , normalBorderColor = colBorder
+        , focusedBorderColor = colFocused
+        , focusFollowsMouse = True
+        , clickJustFocuses = False
+        , layoutHook = myLayout
+        , manageHook = myManageHook
+        , keys = (`mkKeymap` myKeys)
+        , mouseBindings = myMouse
+        , logHook = barLog
+        , handleEventHook = screenUnderMouse
+        , rootMask = rootMask def .|. pointerMotionMask
+        , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs
+          startupHook = setWMName "LG3D" >> spawn "\"$HOME/.config/xmonad/autostart\""
+        }

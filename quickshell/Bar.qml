@@ -6,7 +6,8 @@ import Quickshell.Services.SystemTray
 // Top bar, one per screen: floating rounded "islands" on a transparent
 // window (picom does the transparency; without a compositor the gaps
 // between islands are black).
-//   left:   launcher button, workspaces with the icons of their windows, layout
+//   left:   launcher button, workspaces with the icons of their windows
+//           (the layout pops up on change instead: LayoutOsd.qml)
 //   middle: the active window (icon + title)
 //   right:  recording, Slack, volume, battery, tray, clock
 PanelWindow {
@@ -56,7 +57,7 @@ PanelWindow {
     WheelHandler { onWheel: e => Xmonad.cycle(e.angleDelta.y > 0 ? -1 : 1) }
 
     // =========================================================================
-    // left: launcher, workspaces, layout
+    // left: launcher, workspaces
     // =========================================================================
     Row {
         anchors { left: parent.left; verticalCenter: parent.verticalCenter }
@@ -159,35 +160,6 @@ PanelWindow {
                         }
                     }
                 }
-            }
-        }
-
-        // layout of this screen's workspace; left click: next (super+m),
-        // right click: back to the first one (super+shift+space)
-        Island {
-            width: layoutRow.implicitWidth + 20
-            Row {
-                id: layoutRow
-                anchors.centerIn: parent
-                spacing: 6
-                readonly property string name: root.xs ? root.xs.layout : ""
-                Glyph {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: ({ tall: "", wide: "", cols: "", full: "" })[layoutRow.name] || ""
-                    font.pixelSize: 14
-                    color: Colors.cyan
-                }
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: layoutRow.name
-                    font { family: Colors.font; pixelSize: 12 }
-                    color: Colors.muted
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                onClicked: m => Xmonad.key(m.button === Qt.RightButton ? "super+shift+space" : "super+m")
             }
         }
     }
