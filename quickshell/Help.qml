@@ -38,7 +38,7 @@ FloatingWindow {
         ] },
         { name: "Fokus i przenoszenie", icon: "", items: [
             { keys: ["super+h", "super+l", "super+←→↑↓"], desc: "fokus okna w tym kierunku" },
-            { keys: ["super+k", "super+j"], desc: "poprzednie / następne okno na workspace" },
+            { keys: ["super+k", "super+j"], desc: "okno wyżej / niżej" },
             { keys: ["super+shift+h", "super+shift+l", "super+shift+←→↑↓"], desc: "zamień z sąsiadem" },
             { keys: ["super+ctrl+h/l/k/j"], desc: "fokus monitora" },
             { keys: ["super+shift+ctrl+h/l/k/j"], desc: "okno na monitor" },

@@ -137,8 +137,8 @@ myKeys =
   , ("M-<Right>", windowGo R False)
   , ("M-<Up>", windowGo U False)
   , ("M-<Down>", windowGo D False)
-  , ("M-k", windows W.focusUp) -- previous / next window on this workspace
-  , ("M-j", windows W.focusDown)
+  , ("M-k", windowGo U False) -- the window above / below (never sideways)
+  , ("M-j", windowGo D False)
   , ("M-<Tab>", toggleWS)
   , ("M-u", focusUrgent) -- jump to the window that asked for attention
   , -- move
@@ -377,7 +377,10 @@ main = do
       . ewmh
       . docks
       . withUrgencyHook NoUrgencyHook
-      . withNavigation2DConfig def
+      -- sideNavigation: the default line navigation casts a line from the
+      -- middle of the window, which with gaps lands between two stacked
+      -- windows and finds nothing (super+l from the master did nothing)
+      . withNavigation2DConfig def {defaultTiledNavigation = sideNavigation}
       $ def
         { modMask = mod4Mask
         , terminal = "wezterm"
