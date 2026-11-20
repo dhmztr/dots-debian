@@ -209,7 +209,8 @@ popraw też tam.
 | --- | --- |
 | `super+Return` / `super+q` | wezterm / librewolf (albo firefox-esr) |
 | `super+r` | launcher (aplikacje, otwarte okna, kalkulator `2*21`, emoji po `:`, pliki w `~`) |
-| `super+n` | Slack: przełącz na niego albo uruchom |
+| `super+n` | nowe okno wezterma w tym samym katalogu (skrót wezterma) |
+| `super+shift+n` | Slack: przełącz na niego albo uruchom |
 | ``super+` `` lub `super+'` / `super+b` | scratchpad: terminal / btop (wysuwa się nad wszystko, ten sam skrót chowa) |
 | `super+h/l`, `super+←/→/↑/↓` | fokus okna w tym kierunku |
 | `super+k/j`, `super+Tab` | poprzedni / następny / ostatni workspace |
@@ -293,7 +294,7 @@ monitor z fokusem (jeśli był na drugim, monitory się nim zamieniają).
 Slack ma na pasku **własny przycisk**, niezależny od traya: widać go zawsze,
 gdy Slack jest zainstalowany (wyszarzony, gdy nie działa). Czerwony licznik
 to liczba powiadomień ze Slacka od ostatniego przełączenia się na niego.
-Klik albo `super+n` otwiera Slacka (uruchamia go, gdy nie działa) i zeruje
+Klik albo `super+shift+n` otwiera Slacka (uruchamia go, gdy nie działa) i zeruje
 licznik. Licznik zeruje się też sam, gdy okno Slacka dostaje fokus.
 
 - Licznik liczy `dunst`: reguła `[slack]` w `dunstrc` odpala

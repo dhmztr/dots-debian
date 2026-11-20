@@ -29,7 +29,7 @@ import XMonad.Layout.Renamed (Rename (Replace), renamed)
 import XMonad.Layout.ResizableTile (MirrorResize (..), ResizableTall (..))
 import XMonad.Layout.Spacing (Border (..), spacingRaw, toggleScreenSpacingEnabled, toggleWindowSpacingEnabled)
 import XMonad.Layout.ThreeColumns (ThreeCol (..))
-import XMonad.Util.EZConfig (checkKeymap, mkKeymap)
+import XMonad.Util.EZConfig (mkKeymap, readKeySequence)
 import XMonad.Util.NamedScratchpad
 
 import Control.Exception (SomeException, try)
@@ -38,7 +38,7 @@ import Data.Char (ord, toLower)
 import Data.List (elemIndex, intercalate, sortOn)
 import Data.Monoid (All (..))
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import System.Directory (doesPathExist)
 import System.Environment (lookupEnv, setEnv)
 import System.Exit (exitSuccess)
@@ -108,7 +108,7 @@ myManageHook =
 -- super = M, alt = M1. Commands run under /bin/sh. Punctuation keys are
 -- written as the character ("M-[", "M-`"); EZConfig silently drops names it
 -- does not know (<grave>, <bracketleft>, ...), so the startup hook runs
--- checkKeymap, which pops up a message about any such binding.
+-- checkKeys, which pops up a message about any such binding.
 
 myKeys :: [(String, X ())]
 myKeys =
@@ -117,7 +117,9 @@ myKeys =
   , ("M-q", spawn "librewolf || firefox-esr")
   , ("M-r", spawn "quickshell ipc call launcher toggle")
   , ("M-s", spawn "quickshell ipc call help toggle")
-  , ("M-n", raiseMaybe (spawn "slack") (className =? "Slack")) -- Slack: focus or start
+  -- Slack: focus or start. super+n itself stays free: wezterm opens a new
+  -- window in the current directory with it
+  , ("M-S-n", raiseMaybe (spawn "slack") (className =? "Slack"))
   , ("M-`", namedScratchpadAction scratchpads "term")
   , ("M-'", namedScratchpadAction scratchpads "term")
   , ("M-b", namedScratchpadAction scratchpads "btop")
@@ -222,6 +224,18 @@ layoutOsd act = do
 -- "Spacing tall" -> "tall"; the fullscreen toggle reports "Full"
 layoutName :: W.Workspace WorkspaceId (Layout Window) Window -> String
 layoutName = maybe "" (map toLower) . listToMaybe . reverse . words . description . W.layout
+
+-- Unparseable or duplicate bindings in myKeys -> xmessage. (EZConfig's own
+-- checkKeymap in xmonad-contrib 0.18.0 reports every key as a duplicate.)
+checkKeys :: X ()
+checkKeys = do
+  let conf = def {modMask = mod4Mask}
+      parsed = [(k, readKeySequence conf k) | (k, _) <- myKeys]
+      bad = [k | (k, Nothing) <- parsed]
+      dups = [k | (k, Just s) <- parsed, length [() | (_, Just s') <- parsed, s' == s] > 1]
+      line name ks = if null ks then "" else name ++ ": " ++ unwords ks ++ "\n"
+  unless (null bad && null dups) $
+    xmessage ("xmonad.hs keybindings\n" ++ line "unknown" bad ++ line "duplicate" dups)
 
 toggleFloat :: X ()
 toggleFloat = withFocused $ \w -> do
@@ -381,7 +395,7 @@ main = do
         , rootMask = rootMask def .|. pointerMotionMask
         , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs
           startupHook = do
-            checkKeymap (def {modMask = mod4Mask}) myKeys
+            checkKeys
             setWMName "LG3D"
             spawn "\"$HOME/.config/xmonad/autostart\""
         }
