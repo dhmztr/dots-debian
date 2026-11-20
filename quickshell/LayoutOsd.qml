@@ -4,14 +4,16 @@ import Quickshell
 // Layout pop-up: xmonad's layout keys (layoutOsd in xmonad.hs) call
 // `quickshell ipc call osd layout <name>` (handled in shell.qml); this shows
 // the new layout in the middle of the focused screen for a moment.
-// Click-through and outside the struts, so it never moves windows.
-PanelWindow {
+//
+// A popup (override-redirect on X11) anchored to the screen's bar, not a
+// panel: xmonad does not stack panels, so windows opened later covered it.
+// X puts an override-redirect window on top every time it is shown.
+PopupWindow {
     id: root
 
-    required property var modelData
-    screen: modelData
+    required property var bar          // the Bar (PanelWindow) of this screen
 
-    readonly property var xs: Xmonad.screenFor(modelData)
+    readonly property var xs: Xmonad.screenFor(bar.modelData)
     readonly property bool mine: xs !== null && xs.id === Xmonad.focusedScreen
 
     readonly property var layouts: [
@@ -34,16 +36,14 @@ PanelWindow {
     Timer { id: hide; interval: 1100; onTriggered: root.shown = false }
 
     visible: shown || box.opacity > 0
-    exclusionMode: ExclusionMode.Ignore
-    anchors { top: true; left: true }
-    margins {
-        top: Math.round((modelData.height - implicitHeight) / 2)
-        left: Math.round((modelData.width - implicitWidth) / 2)
-    }
+    // centre of the screen, in the bar's coordinates (the bar sits at its
+    // top/left margins)
+    anchor.window: bar
+    anchor.rect.x: Math.round((bar.modelData.width - implicitWidth) / 2) - bar.margins.left
+    anchor.rect.y: Math.round((bar.modelData.height - implicitHeight) / 2) - bar.margins.top
     implicitWidth: 300
     implicitHeight: 150
     color: "transparent"
-    mask: Region {}
 
     Rectangle {
         id: box
