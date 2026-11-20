@@ -4,3 +4,8 @@
 gui:
   nerdFontsVersion: "3"
 disableStartupPopups: true
+# diffs through delta (apt install git-delta), same look as `git diff`
+git:
+  paging:
+    colorArg: always
+    pager: delta --dark --paging=never

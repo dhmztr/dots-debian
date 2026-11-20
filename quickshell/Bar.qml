@@ -240,6 +240,163 @@ PanelWindow {
             MouseArea { anchors.fill: parent; onClicked: RecState.stop() }
         }
 
+        // next meeting (Google Calendar, bin/next-meeting): countdown, then
+        // "teraz" while it runs. Click joins (Meet link), right click lists
+        // the day's meetings.
+        Island {
+            id: meet
+            visible: Calendar.ok && Calendar.next !== null
+            width: meetRow.implicitWidth + 20
+            readonly property color tintColor: Calendar.ongoing ? Colors.purple
+                : Calendar.minutes <= 5 ? Colors.red
+                : Calendar.minutes <= 15 ? Colors.yellow : Colors.foreground
+            color: Calendar.ongoing ? root.tint(Colors.purple, 0.16)
+                 : Calendar.minutes <= 5 ? root.tint(Colors.red, 0.16) : Colors.surface
+            Behavior on color { ColorAnimation { duration: 200 } }
+            Row {
+                id: meetRow
+                anchors.centerIn: parent
+                spacing: 6
+                Glyph {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "\uf073"
+                    font.pixelSize: 14
+                    color: meet.tintColor
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    readonly property var e: Calendar.next
+                    readonly property string when: !e ? ""
+                        : Calendar.ongoing ? "teraz"
+                        : Calendar.minutes <= 60 ? "za " + Calendar.minutes + " min"
+                        : Qt.formatTime(new Date(e.start), "hh:mm")
+                    text: e ? when + " · " + (e.title.length > 24 ? e.title.slice(0, 23) + "…" : e.title) : ""
+                    font { family: Colors.font; pixelSize: 12 }
+                    color: meet.tintColor
+                }
+            }
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: m => {
+                    if (m.button === Qt.RightButton) meetPopup.visible = !meetPopup.visible
+                    else Calendar.open(Calendar.next)
+                }
+            }
+            ListPopup {
+                id: meetPopup
+                bar: root
+                anchorItem: meet
+                heading: "Spotkania (24 h)"
+                items: Calendar.events.map(e => ({
+                    title: e.title,
+                    detail: Qt.formatTime(new Date(e.start), "hh:mm") + "–" + Qt.formatTime(new Date(e.end), "hh:mm")
+                            + (e.link ? "  ·  dołącz" : ""),
+                    color: Colors.foreground,
+                    url: e.link || "https://calendar.google.com"
+                }))
+            }
+        }
+
+        // GitLab: your open MRs with the worst pipeline as a coloured dot, plus
+        // MRs waiting for your review. Click lists them (click one to open).
+        Island {
+            id: gl
+            visible: Gitlab.ok && (Gitlab.mine.length > 0 || Gitlab.review.length > 0)
+            width: glRow.implicitWidth + 20
+            readonly property color stateColor: ({ failed: Colors.red, running: Colors.yellow,
+                                                   success: Colors.cyan })[Gitlab.state] || Colors.muted
+            Row {
+                id: glRow
+                anchors.centerIn: parent
+                spacing: 6
+                Glyph {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "\uf296" // gitlab
+                    font.pixelSize: 15
+                    color: Colors.rose
+                }
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Gitlab.state !== "none"
+                    width: 8; height: 8; radius: 4
+                    color: gl.stateColor
+                    SequentialAnimation on opacity {
+                        running: Gitlab.state === "running"; loops: Animation.Infinite
+                        NumberAnimation { to: 0.3; duration: 700 }
+                        NumberAnimation { to: 1; duration: 700 }
+                    }
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Gitlab.mine.length
+                    font { family: Colors.font; pixelSize: 12 }
+                    color: Colors.foreground
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Gitlab.review.length > 0
+                    text: "\uf06e " + Gitlab.review.length   // eye: to review
+                    font { family: Colors.font; pixelSize: 12 }
+                    color: Colors.yellow
+                }
+            }
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: m => {
+                    if (m.button === Qt.RightButton) Gitlab.refresh()
+                    else glPopup.visible = !glPopup.visible
+                }
+            }
+            ListPopup {
+                id: glPopup
+                bar: root
+                anchorItem: gl
+                heading: "Merge requesty"
+                onOpened: Gitlab.refresh()
+                items: Gitlab.mine.map(m => ({
+                    title: (m.draft ? "[draft] " : "") + m.title,
+                    detail: m.ref + "  ·  pipeline: " + (m.pipeline || "brak") + "  ·  " + m.merge.replace(/_/g, " "),
+                    color: ({ failed: Colors.red, running: Colors.yellow, success: Colors.cyan })[m.pipeline] || Colors.foreground,
+                    url: m.url
+                })).concat(Gitlab.review.map(r => ({
+                    title: "\uf06e  " + r.title,
+                    detail: "review dla @" + r.author,
+                    color: Colors.yellow,
+                    url: r.url
+                })))
+            }
+        }
+
+        // focus mode (dunst paused): super+d or click. While on, the bell is
+        // crossed out and shows how many notifications are waiting.
+        Island {
+            id: focusIsland
+            width: focusRow.implicitWidth + 20
+            color: Focus.paused ? root.tint(Colors.red, 0.16) : Colors.surface
+            Behavior on color { ColorAnimation { duration: 200 } }
+            Row {
+                id: focusRow
+                anchors.centerIn: parent
+                spacing: 6
+                Glyph {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Focus.paused ? "\uf1f6" : "\uf0f3"   // bell-slash / bell
+                    font.pixelSize: 14
+                    color: Focus.paused ? Colors.red : Colors.muted
+                }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: Focus.paused && Focus.waiting > 0
+                    text: Focus.waiting
+                    font { family: Colors.font; pixelSize: 12; bold: true }
+                    color: Colors.red
+                }
+            }
+            MouseArea { anchors.fill: parent; onClicked: Focus.toggle() }
+        }
+
         // Slack: on the bar whenever it is installed, tray icon or not.
         // Badge = Slack notifications since Slack last had focus.
         Island {

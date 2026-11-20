@@ -13,6 +13,7 @@ ShellRoot {
     }
     Launcher {}
     Help {}
+    Clipboard {}
 
     // xmonad's layout keys: `quickshell ipc call osd layout <name>`
     IpcHandler {

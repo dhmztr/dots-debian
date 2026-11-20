@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""Upcoming meetings from Google Calendar for the bar, as JSON on stdout.
+
+  {"ok": true, "events": [{"title", "start", "end", "link"}]}   (ISO times)
+  {"ok": false, "error": "..."}
+
+Reads the calendar's *secret address in iCal format*: Google Calendar ->
+Settings -> (your calendar) -> Integrate calendar -> "Secret address in iCal
+format". Put that URL (one per line for several calendars) in
+~/.config/dots/calendar-ics. The feed is downloaded at most every 10 minutes
+(cache in ~/.cache/next-meeting).
+
+Events: the next 24 hours, timed only (no all-day events), cancelled ones
+skipped, sorted by start; a meeting stays listed until it ends. "link" is the
+Google Meet (or Zoom/Teams) URL when the event has one.
+
+Needs python3-icalendar; recurring meetings also need
+python3-recurring-ical-events (without it only one-off events show up).
+"""
+import datetime as dt
+import hashlib
+import json
+import os
+import re
+import sys
+import time
+import urllib.request
+
+CONF = os.path.expanduser("~/.config/dots/calendar-ics")
+CACHE = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"), "next-meeting")
+MAX_AGE = 600
+LINK_RE = re.compile(r"https://(?:meet\.google\.com/[a-z0-9-]+|[\w.-]*zoom\.us/j/\S+|teams\.microsoft\.com/l/meetup-join/\S+)")
+
+
+def fetch(url):
+    os.makedirs(CACHE, exist_ok=True)
+    path = os.path.join(CACHE, hashlib.sha1(url.encode()).hexdigest() + ".ics")
+    try:
+        fresh = time.time() - os.path.getmtime(path) < MAX_AGE
+    except OSError:
+        fresh = False
+    if not fresh:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "next-meeting"})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = r.read()
+            with open(path + ".tmp", "wb") as f:
+                f.write(data)
+            os.replace(path + ".tmp", path)
+        except OSError:
+            if not os.path.exists(path):
+                raise   # offline and nothing cached yet
+    with open(path, "rb") as f:
+        return f.read()
+
+
+def link_of(ev):
+    for key in ("X-GOOGLE-CONFERENCE", "URL"):
+        v = ev.get(key)
+        if v and LINK_RE.match(str(v)):
+            return str(v)
+    for key in ("DESCRIPTION", "LOCATION"):
+        m = LINK_RE.search(str(ev.get(key, "")))
+        if m:
+            return m.group(0).rstrip(".,)>")
+    return ""
+
+
+def main():
+    try:
+        import icalendar
+    except ImportError:
+        return {"ok": False, "error": "python3-icalendar is not installed"}
+    try:
+        import recurring_ical_events
+    except ImportError:
+        recurring_ical_events = None
+    try:
+        with open(CONF) as f:
+            urls = [l.strip() for l in f if l.strip() and not l.startswith("#")]
+    except OSError:
+        return {"ok": False, "error": f"no calendar configured ({CONF})"}
+
+    now = dt.datetime.now(dt.timezone.utc)
+    until = now + dt.timedelta(hours=24)
+    events = []
+    for url in urls:
+        cal = icalendar.Calendar.from_ical(fetch(url))
+        if recurring_ical_events:
+            found = recurring_ical_events.of(cal).between(now - dt.timedelta(hours=12), until)
+        else:
+            found = cal.walk("VEVENT")
+        for ev in found:
+            start = ev.get("DTSTART")
+            if start is None or not isinstance(start.dt, dt.datetime):
+                continue   # all-day event
+            if str(ev.get("STATUS", "")).upper() == "CANCELLED":
+                continue
+            s = start.dt
+            end = ev.get("DTEND")
+            e = end.dt if end is not None else s + dt.timedelta(minutes=30)
+            if s.tzinfo is None:   # floating time: treat as local
+                s = s.astimezone()
+            if e.tzinfo is None:
+                e = e.astimezone()
+            if e <= now or s >= until:
+                continue
+            events.append({
+                "title": str(ev.get("SUMMARY", "(bez tytułu)")),
+                "start": s.astimezone(dt.timezone.utc).isoformat(),
+                "end": e.astimezone(dt.timezone.utc).isoformat(),
+                "link": link_of(ev),
+            })
+    events.sort(key=lambda x: x["start"])
+    return {"ok": True, "events": events[:8], "recurring": recurring_ical_events is not None}
+
+
+if __name__ == "__main__":
+    try:
+        out = main()
+    except Exception as e:   # network, parse errors: the bar just hides
+        out = {"ok": False, "error": f"{type(e).__name__}: {e}"}
+    json.dump(out, sys.stdout, ensure_ascii=False)
+    sys.stdout.write("\n")

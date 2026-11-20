@@ -174,15 +174,16 @@ alias q='exit'
 alias h='history'
 alias c='clear'
 
-# Git shortcuts
-alias gs='git status'
-alias ga='git add'
-alias gc='git commit'
-alias gcl='git clone'
-alias gl='git log --oneline'
-alias gd='git diff'
-alias gpush='git push'
-alias gpull='git pull'
+# Git shortcuts (abbreviations: expand on space, so the full command is
+# what you see, edit and find in the history)
+abbr -a gs 'git status'
+abbr -a ga 'git add'
+abbr -a gc 'git commit'
+abbr -a gcl 'git clone'
+abbr -a gl 'git log --oneline'
+abbr -a gd 'git diff'
+abbr -a gpush 'git push'
+abbr -a gpull 'git pull'
 
 # System control
 alias wifi='nmtui'
@@ -214,14 +215,14 @@ set -gx CARGO_HOME $HOME/.cargo
 ### Cargo #########
 ###################
 # Size-optimized builds
-alias cb='cargo build --release'
-alias cr='cargo run --release'
+abbr -a cb 'cargo build --release'
+abbr -a cr 'cargo run --release'
 # Tiny: max size shrink (opt-level=z, abort on panic - don't use for `cargo test`)
-alias cbt "cargo build --release --config 'profile.release.opt-level=\"z\"' --config 'profile.release.panic=\"abort\"'"
-alias ccl='cargo clean'
+abbr -a cbt "cargo build --release --config 'profile.release.opt-level=\"z\"' --config 'profile.release.panic=\"abort\"'"
+abbr -a ccl 'cargo clean'
 # lint every target (tests, examples, benches) with all features
-alias clippy='cargo clippy --all-targets --all-features'
-alias csize='cargo build --release; and du -sh target/release'
+abbr -a clippy 'cargo clippy --all-targets --all-features'
+abbr -a csize 'cargo build --release; and du -sh target/release'
 # everything before a push: clippy, tests, build, all features; stops at the
 # first step that fails
-alias cca='cargo clippy --all-targets --all-features; and cargo test --all-features; and cargo build --all-features'
+abbr -a cca 'cargo clippy --all-targets --all-features; and cargo test --all-features; and cargo build --all-features'

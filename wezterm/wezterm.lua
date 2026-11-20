@@ -48,4 +48,35 @@ config.colors = {
   },
 }
 
+-- file:line[:col] in compiler / test / grep output (src/main.rs:42:7,
+-- ./foo.cc:10, /abs/path.py:3) becomes a link: ctrl+click opens it in nvim
+-- in a new tab, at that line, relative to the pane's directory.
+-- (ctrl+shift+space = quick select: copy hashes, paths, URLs by letter)
+config.hyperlink_rules = wezterm.default_hyperlink_rules()
+table.insert(config.hyperlink_rules, {
+  regex = [[((?:/|\.\.?/)?(?:[\w.+-]+/)*[\w.+-]+\.(?:rs|c|cc|cpp|cxx|h|hh|hpp|m|mm|py|lua|js|jsx|ts|tsx|go|java|kt|hs|qml|toml|json|ya?ml|md|sh|fish|gn|gni|cmake|txt)):(\d+)(?::(\d+))?]],
+  format = 'editor://$1:$2:$3',
+})
+
+wezterm.on('open-uri', function(window, pane, uri)
+  local file, line, col = uri:match '^editor://(.-):(%d+):?(%d*)$'
+  if not file then
+    return -- not ours: default handling (browser for URLs)
+  end
+  if not file:match '^/' then
+    local cwd = pane:get_current_working_dir()
+    local dir = cwd and (cwd.file_path or tostring(cwd):gsub('^file://[^/]*', ''))
+    if dir then
+      file = dir .. '/' .. file
+    end
+  end
+  window:perform_action(
+    wezterm.action.SpawnCommandInNewTab {
+      args = { 'nvim', '+call cursor(' .. line .. ',' .. (col ~= '' and col or '1') .. ')', file },
+    },
+    pane
+  )
+  return false
+end)
+
 return config

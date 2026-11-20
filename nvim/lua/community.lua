@@ -28,5 +28,11 @@ return {
   { import = "astrocommunity.diagnostics.trouble-nvim" },
   { import = "astrocommunity.editing-support.todo-comments-nvim" },
   { import = "astrocommunity.search.grug-far-nvim" },
+  -- tests and tasks: <Leader>T neotest (run the test under the cursor,
+  -- results next to it; Rust via rustaceanvim), <Leader>M overseer (build /
+  -- test tasks with output and quickfix). Debugging (nvim-dap + codelldb for
+  -- Rust/C/C++) ships with AstroNvim and the rust pack: <Leader>d
+  { import = "astrocommunity.test.neotest" },
+  { import = "astrocommunity.code-runner.overseer-nvim" },
   -- import/override with your plugins folder
 }

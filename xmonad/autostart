@@ -37,6 +37,16 @@ fi
 command -v picom >/dev/null && ! pgrep -x picom >/dev/null &&
     picom -b --config "$HOME/.config/picom/picom.conf"
 
+# clipboard history (bin/cliphist, super+v)
+pgrep -f "cliphist daemon" >/dev/null || setsid -f cliphist daemon >/dev/null 2>&1
+
+# lock the screen after 10 minutes idle and before suspend (lid close);
+# super+alt+l locks by hand
+if command -v xss-lock >/dev/null && ! pgrep -x xss-lock >/dev/null; then
+    xset s 600 600
+    setsid -f xss-lock -l -- i3lock -c 191724 >/dev/null 2>&1
+fi
+
 # notifications (Slack, screenshots, recording, OCR)
 command -v dunst >/dev/null && ! pgrep -x dunst >/dev/null && dunst &
 
