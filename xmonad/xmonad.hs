@@ -14,6 +14,7 @@ import qualified XMonad.StackSet as W
 
 import XMonad.Actions.CycleWS (nextWS, prevWS, toggleOrView, toggleWS)
 import XMonad.Actions.Navigation2D
+import XMonad.Actions.UpdatePointer (updatePointer)
 import XMonad.Actions.WindowGo (raiseMaybe)
 import XMonad.Hooks.EwmhDesktops (ewmh, ewmhFullscreen)
 import XMonad.Hooks.InsertPosition (Focus (Newer), Position (End), insertPosition)
@@ -136,8 +137,8 @@ myKeys =
   , ("M-<Right>", windowGo R False)
   , ("M-<Up>", windowGo U False)
   , ("M-<Down>", windowGo D False)
-  , ("M-k", windows W.focusUp) -- previous / next window on this workspace
-  , ("M-j", windows W.focusDown)
+  , ("M-k", windowGo U False) -- the window above / below (never sideways)
+  , ("M-j", windowGo D False)
   , ("M-<Tab>", toggleWS)
   , ("M-u", focusUrgent) -- jump to the window that asked for attention
   , -- move
@@ -376,7 +377,10 @@ main = do
       . ewmh
       . docks
       . withUrgencyHook NoUrgencyHook
-      . withNavigation2DConfig def
+      -- sideNavigation: the default line navigation casts a line from the
+      -- middle of the window, which with gaps lands between two stacked
+      -- windows and finds nothing (super+l from the master did nothing)
+      . withNavigation2DConfig def {defaultTiledNavigation = sideNavigation}
       $ def
         { modMask = mod4Mask
         , terminal = "wezterm"
@@ -390,7 +394,12 @@ main = do
         , manageHook = myManageHook
         , keys = (`mkKeymap` myKeys)
         , mouseBindings = myMouse
-        , logHook = barLog
+        , -- updatePointer: after the focus moves without the mouse (new window,
+          -- layout change, super+j/k, ...) the pointer jumps to the middle of
+          -- the focused window, unless it is already inside it. Focus and
+          -- pointer then always agree, so super+f, super+shift+c etc. never
+          -- hit a different window than the one under the mouse.
+          logHook = barLog >> updatePointer (0.5, 0.5) (0, 0)
         , handleEventHook = screenUnderMouse
         , rootMask = rootMask def .|. pointerMotionMask
         , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs
