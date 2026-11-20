@@ -33,7 +33,7 @@ w bashu.
 ```sh
 sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
   x11-xserver-utils x11-xkb-utils x11-utils xinput dbus-bin \
-  xmonad libghc-xmonad-contrib-dev picom pavucontrol \
+  xmonad libghc-xmonad-contrib-dev picom hsetroot pavucontrol \
   i3lock xclip xdotool maim slop jq ffmpeg grabc \
   tesseract-ocr tesseract-ocr-pol brightnessctl \
   pipewire pipewire-pulse wireplumber pulseaudio-utils \
@@ -46,6 +46,7 @@ sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
   `super+alt+w` kompiluje i restartuje po zmianach (okna zostają).
 - `picom` (12+, tyle ma Debian 13): animacje i przezroczystość. Bez niego
   wszystko działa, ale bez animacji, a odstępy między wyspami paska są czarne.
+- `hsetroot`: kolor tła pulpitu (z `xsetroot` pod picomem tło jest czarne).
 - `x11-utils` (`xprop`): pasek czyta przez niego stan xmonada.
 - `unicode-data` + `fonts-noto-color-emoji`: emoji w launcherze (`super+.`).
 - `flameshot`: screenshot z adnotacją (`super+ctrl+shift+s`); `super+shift+s` i `Print` robią zwykły.
