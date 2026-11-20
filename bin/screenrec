@@ -40,14 +40,9 @@ dir="$HOME/Videos/Recordings"; mkdir -p "$dir"
 file="$dir/$(date +%Y-%m-%d_%H-%M-%S).mp4"
 
 case "$mode" in
-    output)  # monitor under the mouse pointer
-        need xdotool
-        eval "$(xdotool getmouselocation --shell)"   # X Y SCREEN WINDOW
-        # " 0: +*eDP 2560/345x1600/215+0+0  eDP" -> "2560 1600 0 0"
-        geom="$(xrandr --listactivemonitors | awk -v px="$X" -v py="$Y" 'NR > 1 {
-            g = $3; gsub(/\/[0-9]+/, "", g); split(g, a, /[x+]/)
-            if (px >= a[3] && px < a[3] + a[1] && py >= a[4] && py < a[4] + a[2]) { print a[1], a[2], a[3], a[4]; exit }
-        }')" ;;
+    output)  # focused monitor
+        need jq
+        geom="$(bspc query -T -m | jq -r '.rectangle | "\(.width) \(.height) \(.x) \(.y)"')" ;;
     *)
         need slop
         geom="$(slop -f '%w %h %x %y')" || exit 0 ;;   # Esc cancels

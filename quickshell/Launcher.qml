@@ -4,15 +4,14 @@ import Quickshell.Io
 import QtCore
 
 // App launcher (super+r -> `quickshell ipc call launcher toggle`): apps from
-// .desktop files, open windows (xmonad, via EWMH), calculator ("2*21"), emoji (":" prefix
+// .desktop files, open windows (bspwm), calculator ("2*21"), emoji (":" prefix
 // or super+. -> `quickshell ipc call launcher emoji`), file search in ~
 // (fd / fdfind).
 // Full-screen dim overlay; click outside or Esc closes it.
 //
-// A normal (managed) window rather than a PanelWindow: X11 window managers
-// do not give keyboard focus to dock windows, so a panel would open with
-// every key still going to the window behind it. xmonad.hs makes this window
-// fullscreen.
+// A normal (managed) window rather than a PanelWindow: bspwm never gives
+// keyboard focus to dock windows, so a panel would open with every key still
+// going to the window behind it. bspwmrc makes this window fullscreen.
 FloatingWindow {
     id: root
     visible: false
@@ -68,11 +67,10 @@ FloatingWindow {
         }
     }
 
-    // open windows on every workspace (id, class, title) from xmonad's
-    // _NET_CLIENT_LIST, refreshed on every open
+    // open bspwm windows (id, class, title), refreshed on every open
     property var _windows: []
     readonly property Process _winLoader: Process {
-        command: ["sh", "-c", "for w in $(xprop -root _NET_CLIENT_LIST | grep '#' | sed 's/.*# //; s/,/ /g'); do printf '%s\\t%s\\t%s\\n' \"$w\" \"$(xdotool getwindowclassname \"$w\" 2>/dev/null)\" \"$(xdotool getwindowname \"$w\" 2>/dev/null)\"; done"]
+        command: ["sh", "-c", "for w in $(bspc query -N -n .window); do printf '%s\\t%s\\t%s\\n' \"$w\" \"$(xdotool getwindowclassname \"$w\" 2>/dev/null)\" \"$(xdotool getwindowname \"$w\" 2>/dev/null)\"; done"]
         stdout: StdioCollector {
             onStreamFinished: {
                 root._windows = this.text.split("\n").filter(l => l).map(l => {
@@ -321,8 +319,8 @@ FloatingWindow {
         const item = combinedModel.get(idx)
 
         if (item.kind === "window") {
-            // _NET_ACTIVE_WINDOW: xmonad switches to the window's workspace too
-            launchProc.command = ["xdotool", "windowactivate", item.winId]
+            // bspwm switches to the window's desktop/monitor too
+            launchProc.command = ["bspc", "node", item.winId, "-f"]
             launchProc.running = false; launchProc.running = true
             root.visible = false
             return

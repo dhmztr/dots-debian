@@ -155,7 +155,7 @@ alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias ......='cd ../../../../..'
-# X11 (xmonad) uses xclip, a Wayland session wl-clipboard
+# X11 (bspwm) uses xclip, a Wayland session wl-clipboard
 if set -q WAYLAND_DISPLAY
     alias copy="wl-copy"
     alias paste="wl-paste"
