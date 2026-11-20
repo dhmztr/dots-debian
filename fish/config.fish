@@ -222,3 +222,6 @@ alias ccl='cargo clean'
 # lint every target (tests, examples, benches) with all features
 alias clippy='cargo clippy --all-targets --all-features'
 alias csize='cargo build --release; and du -sh target/release'
+# everything before a push: clippy, tests, build, all features; stops at the
+# first step that fails
+alias cca='cargo clippy --all-targets --all-features; and cargo test --all-features; and cargo build --all-features'

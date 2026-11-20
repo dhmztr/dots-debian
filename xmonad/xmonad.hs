@@ -12,7 +12,7 @@
 import XMonad
 import qualified XMonad.StackSet as W
 
-import XMonad.Actions.CycleWS (nextWS, prevWS, shiftToNext, shiftToPrev, toggleOrView, toggleWS)
+import XMonad.Actions.CycleWS (nextWS, prevWS, toggleOrView, toggleWS)
 import XMonad.Actions.Navigation2D
 import XMonad.Actions.WindowGo (raiseMaybe)
 import XMonad.Hooks.EwmhDesktops (ewmh, ewmhFullscreen)
@@ -136,8 +136,8 @@ myKeys =
   , ("M-<Right>", windowGo R False)
   , ("M-<Up>", windowGo U False)
   , ("M-<Down>", windowGo D False)
-  , ("M-k", prevWS)
-  , ("M-j", nextWS)
+  , ("M-k", windows W.focusUp) -- previous / next window on this workspace
+  , ("M-j", windows W.focusDown)
   , ("M-<Tab>", toggleWS)
   , ("M-u", focusUrgent) -- jump to the window that asked for attention
   , -- move
@@ -147,8 +147,8 @@ myKeys =
   , ("M-S-<Right>", windowSwap R False)
   , ("M-S-<Up>", windowSwap U False)
   , ("M-S-<Down>", windowSwap D False)
-  , ("M-S-k", shiftToPrev >> prevWS)
-  , ("M-S-j", shiftToNext >> nextWS)
+  , ("M-S-k", prevWS) -- previous / next workspace
+  , ("M-S-j", nextWS)
   , ("M-S-<Return>", windows W.swapMaster)
   , -- windows
     ("M-S-c", kill)

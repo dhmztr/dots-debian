@@ -213,10 +213,10 @@ popraw też tam.
 | `super+shift+n` | Slack: przełącz na niego albo uruchom |
 | ``super+` `` lub `super+'` / `super+b` | scratchpad: terminal / btop (wysuwa się nad wszystko, ten sam skrót chowa) |
 | `super+h/l`, `super+←/→/↑/↓` | fokus okna w tym kierunku |
-| `super+k/j`, `super+Tab` | poprzedni / następny / ostatni workspace |
+| `super+k/j` | poprzednie / następne okno na tym workspace |
+| `super+shift+k/j`, `super+Tab` | poprzedni / następny / ostatni workspace |
 | `super+1..9` / `super+shift+1..9` | workspace (ten sam numer drugi raz wraca) / przenieś okno |
 | `super+shift+h/l/←/→/↑/↓` | zamień okno z sąsiadem |
-| `super+shift+k/j` | przenieś okno na poprzedni / następny workspace |
 | `super+shift+Return` | okno na miejsce mastera |
 | `super+ctrl+…` / `super+shift+ctrl+…` | fokus monitora / okno na monitor |
 | `super+scroll` / scroll na pasku | przełączanie workspace'ów |

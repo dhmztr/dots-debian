@@ -38,6 +38,7 @@ FloatingWindow {
         ] },
         { name: "Fokus i przenoszenie", icon: "", items: [
             { keys: ["super+h", "super+l", "super+←→↑↓"], desc: "fokus okna w tym kierunku" },
+            { keys: ["super+k", "super+j"], desc: "poprzednie / następne okno na workspace" },
             { keys: ["super+shift+h", "super+shift+l", "super+shift+←→↑↓"], desc: "zamień z sąsiadem" },
             { keys: ["super+ctrl+h/l/k/j"], desc: "fokus monitora" },
             { keys: ["super+shift+ctrl+h/l/k/j"], desc: "okno na monitor" },
@@ -46,8 +47,7 @@ FloatingWindow {
         { name: "Workspace'y", icon: "", items: [
             { keys: ["super+1…9"], desc: "pokaż (ten sam drugi raz: poprzedni)" },
             { keys: ["super+shift+1…9"], desc: "przenieś okno" },
-            { keys: ["super+k", "super+j"], desc: "poprzedni / następny" },
-            { keys: ["super+shift+k", "super+shift+j"], desc: "przenieś okno i idź za nim" },
+            { keys: ["super+shift+k", "super+shift+j"], desc: "poprzedni / następny" },
             { keys: ["super+Tab"], desc: "ostatni" },
             { keys: ["super+scroll"], desc: "przewijanie (scroll na pasku też)" }
         ] },
