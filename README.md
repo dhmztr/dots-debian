@@ -210,7 +210,7 @@ popraw też tam.
 | `super+Return` / `super+q` | wezterm / librewolf (albo firefox-esr) |
 | `super+r` | launcher (aplikacje, otwarte okna, kalkulator `2*21`, emoji po `:`, pliki w `~`) |
 | `super+n` | Slack: przełącz na niego albo uruchom |
-| ``super+` `` / `super+b` | scratchpad: terminal / btop (wysuwa się nad wszystko, ten sam skrót chowa) |
+| ``super+` `` lub `super+'` / `super+b` | scratchpad: terminal / btop (wysuwa się nad wszystko, ten sam skrót chowa) |
 | `super+h/l`, `super+←/→/↑/↓` | fokus okna w tym kierunku |
 | `super+k/j`, `super+Tab` | poprzedni / następny / ostatni workspace |
 | `super+1..9` / `super+shift+1..9` | workspace (ten sam numer drugi raz wraca) / przenieś okno |

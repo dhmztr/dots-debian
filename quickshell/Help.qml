@@ -21,7 +21,7 @@ FloatingWindow {
             { keys: ["super+q"], desc: "przeglądarka" },
             { keys: ["super+r"], desc: "launcher: aplikacje, okna, kalkulator, pliki" },
             { keys: ["super+n"], desc: "Slack (przełącz albo uruchom)" },
-            { keys: ["super+`"], desc: "terminal scratchpad (wysuwa / chowa)" },
+            { keys: ["super+`", "super+'"], desc: "terminal scratchpad (wysuwa / chowa)" },
             { keys: ["super+b"], desc: "btop scratchpad" },
             { keys: ["super+s"], desc: "ta pomoc" }
         ] },

@@ -29,7 +29,7 @@ import XMonad.Layout.Renamed (Rename (Replace), renamed)
 import XMonad.Layout.ResizableTile (MirrorResize (..), ResizableTall (..))
 import XMonad.Layout.Spacing (Border (..), spacingRaw, toggleScreenSpacingEnabled, toggleWindowSpacingEnabled)
 import XMonad.Layout.ThreeColumns (ThreeCol (..))
-import XMonad.Util.EZConfig (mkKeymap)
+import XMonad.Util.EZConfig (checkKeymap, mkKeymap)
 import XMonad.Util.NamedScratchpad
 
 import Control.Exception (SomeException, try)
@@ -73,12 +73,15 @@ myLayout =
 
 -- ---- scratchpads -------------------------------------------------------------
 -- Floating windows that drop down over everything and hide again with the
--- same key: a terminal (super+`) and btop (super+b).
+-- same key: a terminal (super+` or super+') and btop (super+b).
+-- --always-new-process: a wezterm started while another one runs would
+-- otherwise open its window in the running process, without the --class,
+-- and xmonad would never recognise it as the scratchpad.
 
 scratchpads :: [NamedScratchpad]
 scratchpads =
-  [ NS "term" "wezterm start --class scratch-term" (isClass "scratch-term") (centered 0.6 0.55)
-  , NS "btop" "wezterm start --class scratch-btop -- btop" (isClass "scratch-btop") (centered 0.7 0.7)
+  [ NS "term" "wezterm start --always-new-process --class scratch-term" (isClass "scratch-term") (centered 0.6 0.55)
+  , NS "btop" "wezterm start --always-new-process --class scratch-btop -- btop" (isClass "scratch-btop") (centered 0.7 0.7)
   ]
   where
     isClass c = className =? c <||> appName =? c
@@ -102,7 +105,10 @@ myManageHook =
     <> insertPosition End Newer
 
 -- ---- keys --------------------------------------------------------------------
--- super = M, alt = M1. Commands run under /bin/sh.
+-- super = M, alt = M1. Commands run under /bin/sh. Punctuation keys are
+-- written as the character ("M-[", "M-`"); EZConfig silently drops names it
+-- does not know (<grave>, <bracketleft>, ...), so the startup hook runs
+-- checkKeymap, which pops up a message about any such binding.
 
 myKeys :: [(String, X ())]
 myKeys =
@@ -112,7 +118,8 @@ myKeys =
   , ("M-r", spawn "quickshell ipc call launcher toggle")
   , ("M-s", spawn "quickshell ipc call help toggle")
   , ("M-n", raiseMaybe (spawn "slack") (className =? "Slack")) -- Slack: focus or start
-  , ("M-<grave>", namedScratchpadAction scratchpads "term")
+  , ("M-`", namedScratchpadAction scratchpads "term")
+  , ("M-'", namedScratchpadAction scratchpads "term")
   , ("M-b", namedScratchpadAction scratchpads "btop")
   , -- session
     ("M-S-e", io exitSuccess)
@@ -149,12 +156,12 @@ myKeys =
   , ("M-<Space>", layoutOsd $ sendMessage NextLayout)
   , ("M-S-<Space>", layoutOsd $ asks (layoutHook . config) >>= setLayout)
   , ("M-g", toggleScreenSpacingEnabled >> toggleWindowSpacingEnabled)
-  , ("M-<bracketleft>", sendMessage Shrink)
-  , ("M-<bracketright>", sendMessage Expand)
-  , ("M-S-<bracketleft>", sendMessage MirrorShrink)
-  , ("M-S-<bracketright>", sendMessage MirrorExpand)
-  , ("M-<equal>", sendMessage (IncMasterN 1))
-  , ("M-<minus>", sendMessage (IncMasterN (-1)))
+  , ("M-[", sendMessage Shrink)
+  , ("M-]", sendMessage Expand)
+  , ("M-S-[", sendMessage MirrorShrink)
+  , ("M-S-]", sendMessage MirrorExpand)
+  , ("M-=", sendMessage (IncMasterN 1))
+  , ("M--", sendMessage (IncMasterN (-1)))
   , -- screenshots / recording / tools
     -- (`grab`: wait a moment so the selection tools are not fighting the
     -- key that is still held down, or each other on key repeat)
@@ -166,7 +173,7 @@ myKeys =
   , ("M-C-r", spawn "screenrec output")
   , ("M-M1-r", grab "screenrec region audio")
   , ("M-p", grab "grabc 2>/dev/null | tr -d '\\n' | xclip -selection clipboard")
-  , ("M-<Period>", spawn "quickshell ipc call launcher emoji")
+  , ("M-.", spawn "quickshell ipc call launcher emoji")
   , ("M-S-t", grab "ocr-clip")
   , ("M-S-a", spawn "pkill -x pw-loopback || pw-loopback")
   , -- media keys
@@ -373,5 +380,8 @@ main = do
         , handleEventHook = screenUnderMouse
         , rootMask = rootMask def .|. pointerMotionMask
         , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs
-          startupHook = setWMName "LG3D" >> spawn "\"$HOME/.config/xmonad/autostart\""
+          startupHook = do
+            checkKeymap (def {modMask = mod4Mask}) myKeys
+            setWMName "LG3D"
+            spawn "\"$HOME/.config/xmonad/autostart\""
         }
