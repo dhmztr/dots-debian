@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Links fish, wezterm, nvim, xmonad, picom and quickshell configs from this repo
+# Links fish, wezterm, nvim, bspwm, sxhkd and quickshell configs from this repo
 # into ~/.config, the helper scripts into ~/.local/bin, and puts the nvim
 # palette in ~/.cache/wal. Existing configs are moved to *.bak-<date>.
 set -euo pipefail
@@ -25,8 +25,8 @@ link() { # link <repo path> <target>
 link fish    "$HOME/.config/fish"
 link wezterm "$HOME/.config/wezterm"
 link nvim    "$HOME/.config/nvim"
-link xmonad     "$HOME/.config/xmonad"
-link picom      "$HOME/.config/picom"
+link bspwm      "$HOME/.config/bspwm"
+link sxhkd      "$HOME/.config/sxhkd"
 link quickshell "$HOME/.config/quickshell"
 link dunst      "$HOME/.config/dunst"
 link lazygit    "$HOME/.config/lazygit"
@@ -34,21 +34,12 @@ for f in "$repo"/bin/*; do
     link "bin/$(basename "$f")" "$HOME/.local/bin/$(basename "$f")"
 done
 
-# startx -> xmonad, unless ~/.xinitrc already exists
+# startx -> bspwm, unless ~/.xinitrc already exists
 if [ ! -e "$HOME/.xinitrc" ]; then
     cp "$repo/xinitrc" "$HOME/.xinitrc"
     echo "copied  ~/.xinitrc"
 else
     echo "kept    ~/.xinitrc (see xinitrc in the repo)"
-    grep -q bspwm "$HOME/.xinitrc" &&
-        echo "        it still starts bspwm: replace 'bspwm' with 'xmonad' in it"
-fi
-
-# compile the xmonad config now, so a typo shows up here and not as a
-# black screen after startx (build output goes to ~/.cache/xmonad)
-if command -v xmonad >/dev/null; then
-    xmonad --recompile && echo "built   xmonad config" ||
-        echo "xmonad --recompile failed, see the errors above"
 fi
 
 # neopywal (nvim colorscheme) reads its palette from here
