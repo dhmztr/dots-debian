@@ -1,20 +1,21 @@
 # dots (Debian 13)
 
-Setup z NixOS (`nix-dots`) przeniesiony na Debiana 13: **bspwm + sxhkd**
-(X11) z tymi samymi skrótami co niri, **quickshell** (pasek + launcher),
-**fish**, **wezterm**, **neovim** (AstroNvim). Bez Nixa, wallusta, tapet,
-dashboardu i file managera. Nic nie zależy od jednostek systemd: sesja
-startuje z `startx`, a wszystko inne odpala `bspwmrc`. Paleta kolorów
-(Rosé Pine) jest stała.
+Setup z NixOS (`nix-dots`) przeniesiony na Debiana 13: **xmonad** (X11) z
+**picomem** (animacje, cienie, zaokrąglone rogi, blur), **quickshell** (pasek
+u góry + launcher), **fish**, **wezterm**, **neovim** (AstroNvim). Bez Nixa,
+wallusta, tapet, dashboardu i file managera. Nic nie zależy od jednostek
+systemd: sesja startuje z `startx`, a wszystko inne odpala
+`xmonad/autostart`. Paleta kolorów (Rosé Pine) jest stała.
 
 ```
-bspwm/bspwmrc        -> ~/.config/bspwm    (WM, autostart: sxhkd, quickshell, audio)
-sxhkd/sxhkdrc        -> ~/.config/sxhkd    (wszystkie skróty)
-dunst/dunstrc        -> ~/.config/dunst    (powiadomienia)
+xmonad/xmonad.hs     -> ~/.config/xmonad   (WM, layouty, wszystkie skróty, stan dla paska)
+xmonad/autostart     -> ~/.config/xmonad   (picom, quickshell, dunst, audio, Slack)
+picom/picom.conf     -> ~/.config/picom    (animacje, cienie, rogi, blur)
+dunst/               -> ~/.config/dunst    (powiadomienia + licznik Slacka)
 lazygit/config.yml   -> ~/.config/lazygit  (bez niego `spacja gg` w nvimie od razu się zamyka)
 tools/qs-tools/      indeks aplikacji launchera w Ruście (`cargo install`, krok 4)
 quickshell/          -> ~/.config/quickshell (pasek + launcher)
-bin/                 -> ~/.local/bin       (monitors, shot, screenrec, ocr-clip, touchpad-toggle)
+bin/                 -> ~/.local/bin       (monitors, shot, screenrec, ocr-clip, touchpad-toggle, slack-autostart)
 xinitrc              -> ~/.xinitrc         (kopiowany, tylko gdy go nie ma)
 fish/      -> ~/.config/fish
 wezterm/   -> ~/.config/wezterm
@@ -27,18 +28,26 @@ Wszystko poniżej instaluje się z apt, z oficjalnych release'ów na GitHubie,
 przez `cargo` / `go`, bez snapa i flatpaka. Komendy działają tak samo w fishu i
 w bashu.
 
-## 0. bspwm, X11 i narzędzia do skrótów
+## 0. xmonad, picom, X11 i narzędzia do skrótów
 
 ```sh
 sudo apt install xserver-xorg-core xserver-xorg-input-libinput xinit \
-  x11-xserver-utils x11-xkb-utils xinput dbus-bin \
-  bspwm sxhkd i3lock xclip xdotool maim slop jq ffmpeg grabc \
+  x11-xserver-utils x11-xkb-utils x11-utils xinput dbus-bin \
+  xmonad libghc-xmonad-contrib-dev picom hsetroot pavucontrol \
+  i3lock xclip xdotool maim slop jq ffmpeg grabc \
   tesseract-ocr tesseract-ocr-pol brightnessctl \
   pipewire pipewire-pulse wireplumber pulseaudio-utils \
   papirus-icon-theme python3 dunst libnotify-bin \
   unicode-data fonts-noto-color-emoji playerctl flameshot lazygit btop
 ```
 
+- `xmonad` + `libghc-xmonad-contrib-dev`: xmonad kompiluje `xmonad.hs`
+  GHC-kiem (ciągnie go ta paczka). `install.sh` robi pierwszą kompilację,
+  `super+alt+w` kompiluje i restartuje po zmianach (okna zostają).
+- `picom` (12+, tyle ma Debian 13): animacje i przezroczystość. Bez niego
+  wszystko działa, ale bez animacji, a odstępy między wyspami paska są czarne.
+- `hsetroot`: kolor tła pulpitu (z `xsetroot` pod picomem tło jest czarne).
+- `x11-utils` (`xprop`): pasek czyta przez niego stan xmonada.
 - `unicode-data` + `fonts-noto-color-emoji`: emoji w launcherze (`super+.`).
 - `flameshot`: screenshot z adnotacją (`super+ctrl+shift+s`); `super+shift+s` i `Print` robią zwykły.
 - `lazygit`: `spacja gg` w nvimie (config w `lazygit/`).
@@ -168,7 +177,9 @@ chsh -s "$(command -v fish)"     # fish jako domyślna powłoka (po relogowaniu)
 ```
 
 Start sesji: zaloguj się na tty i wpisz `startx`. `~/.xinitrc` uruchamia
-bspwm (w `dbus-run-session`, gdy nie ma sesyjnego D-Bus, np. bez systemd).
+xmonada (w `dbus-run-session`, gdy nie ma sesyjnego D-Bus, np. bez systemd).
+Jeśli `~/.xinitrc` został z bspwm, zamień w nim `bspwm` na `xmonad`
+(`install.sh` o tym przypomina).
 Autostart bez display managera, na końcu `~/.config/fish/config.fish`:
 
 ```fish
@@ -186,82 +197,113 @@ kilka minut.
 
 ## Skróty (super = klawisz Windows)
 
-Te same co w niri. Pełna lista: `super+s` albo `sxhkd/sxhkdrc`.
+Pełna lista: `super+s` (otwiera `xmonad.hs`, sekcja `myKeys`).
 
 | skrót | akcja |
 | --- | --- |
 | `super+Return` / `super+q` | wezterm / librewolf (albo firefox-esr) |
 | `super+r` | launcher (aplikacje, otwarte okna, kalkulator `2*21`, emoji po `:`, pliki w `~`) |
-| `super+h/l`, `super+←/→/↑/↓` | fokus okna |
-| `super+k/j`, `super+Tab` | poprzedni / następny / ostatni pulpit |
-| `super+1..9` / `super+shift+1..9` | pulpit / przenieś okno, na aktywnym monitorze (ten sam numer drugi raz wraca) |
+| `super+n` | Slack: przełącz na niego albo uruchom |
+| ``super+` `` / `super+b` | scratchpad: terminal / btop (wysuwa się nad wszystko, ten sam skrót chowa) |
+| `super+h/l`, `super+←/→/↑/↓` | fokus okna w tym kierunku |
+| `super+k/j`, `super+Tab` | poprzedni / następny / ostatni workspace |
+| `super+1..9` / `super+shift+1..9` | workspace (ten sam numer drugi raz wraca) / przenieś okno |
 | `super+shift+h/l/←/→/↑/↓` | zamień okno z sąsiadem |
-| `super+shift+k/j` | przenieś okno na poprzedni / następny pulpit |
+| `super+shift+k/j` | przenieś okno na poprzedni / następny workspace |
+| `super+shift+Return` | okno na miejsce mastera |
 | `super+ctrl+…` / `super+shift+ctrl+…` | fokus monitora / okno na monitor |
-| `super+scroll` | przełączanie pulpitów |
+| `super+scroll` / scroll na pasku | przełączanie workspace'ów |
+| `super+u` | skocz do okna, które woła o uwagę |
 | `super+shift+c` | zamknij okno |
-| `super+t` / `super+f` / `super+m` | floating / fullscreen / monocle |
-| `super+[` `]`, `super+shift+[` `]` | szerokość / wysokość okna |
+| `super+t` / `super+f` | floating / fullscreen (chowa pasek) |
+| `super+m` / `super+space` | następny layout: tall → wide → cols → full |
+| `super+shift+space` | layout z powrotem na tall |
+| `super+g` | odstępy między oknami on/off |
+| `super+[` `]` / `super+shift+[` `]` | szerokość mastera / wysokość okna w stosie |
+| `super+=` / `super+-` | więcej / mniej okien w kolumnie mastera |
 | `super+shift+s` / `Print` | screenshot obszaru (plik + schowek) |
 | `super+ctrl+shift+s` | screenshot obszaru z adnotacją (flameshot) |
 | `super+ctrl+s` | screenshot okna (plik + schowek) |
-| `super+shift+r` / `super+ctrl+r` / `super+alt+r` | nagrywanie obszaru / monitora / obszaru z dźwiękiem; ten sam skrót drugi raz kończy (plik w `~/Videos/Recordings` + schowek). Na pasku czerwona kropka z czasem, klik kończy. Kodowanie na GPU AMD (VAAPI), bez niego x264. To samo z launchera: wpisz `nagr` / `rec` → Nagraj wycinek / cały ekran / wycinek z dźwiękiem / Zatrzymaj |
+| `super+shift+r` / `super+ctrl+r` / `super+alt+r` | nagrywanie obszaru / monitora pod kursorem / obszaru z dźwiękiem; ten sam skrót drugi raz kończy (plik w `~/Videos/Recordings` + schowek). Na pasku czerwona kropka z czasem, klik kończy. Kodowanie na GPU AMD (VAAPI), bez niego x264. To samo z launchera: wpisz `nagr` / `rec` → Nagraj wycinek / cały ekran / wycinek z dźwiękiem / Zatrzymaj |
 | `super+shift+t` | OCR obszaru do schowka |
 | `super+p` | pipeta koloru (`grabc`) |
 | `super+.` | emoji w launcherze (albo `:` i nazwa w launcherze) |
 | `super+alt+t` | touchpad on/off |
 | `super+alt+l` | blokada (`i3lock`) |
-| `super+alt+w` | przeładuj sxhkd i quickshell |
-| `super+shift+e` | wyjście z bspwm |
+| `super+alt+w` | monitory, rekompilacja i restart xmonada, przeładowanie paska |
+| `super+shift+e` | wyjście z xmonada |
 | klawisze multimedialne | głośność, mikrofon, play/next/prev (`playerctl`), jasność |
 
-Bez odpowiedników z niri: overview (`super+Esc`), centrowanie kolumny,
-pierwsza/ostatnia kolumna (`super+Home/End`).
+Mysz: `super` + lewy przycisk przesuwa okno (robi je pływającym), `super` +
+prawy zmienia rozmiar.
 
-Mysz: `super` + lewy przycisk przesuwa okno, `super` + prawy zmienia rozmiar.
-Pasek: kropki to pulpity (klik przełącza, scroll po pasku też), zegar
-(klik: data), tray, bateria (tylko na laptopie).
+## Pasek
+
+Na górze każdego ekranu, „wyspy” z zaokrąglonymi rogami:
+
+- **lewo**: logo Debiana (klik: launcher), workspace'y z ikonami okien,
+  które na nich są (aktywny na tym ekranie podświetlony i szerszy,
+  widoczny na innym monitorze z obwódką, wołający o uwagę na czerwono;
+  klik przełącza), layout (klik: następny, prawy klik: tall).
+- **środek**: aktywne okno, ikona + tytuł (na ekranie z fokusem).
+- **prawo**: nagrywanie, Slack, głośność (scroll zmienia, klik wycisza,
+  prawy klik: pavucontrol), bateria (tylko na laptopie), tray, zegar
+  (klik: data).
+
+Stan bierze z xmonada: `xmonad.hs` (`barLog`) zapisuje JSON we
+właściwości `_XMONAD_LOG` okna root, `quickshell/Xmonad.qml` czyta ją przez
+`xprop -spy`. Podgląd: `xprop -root _XMONAD_LOG`.
 
 ## Monitory
 
-Jak w niri na NixOS: `bin/monitors` (odpalany z `bspwmrc` i przez
-`super+alt+w`) ustawia zewnętrzne ekrany po lewej, panel laptopa (eDP) po
-prawej, każdy w natywnej rozdzielczości z najwyższym odświeżaniem (eDP
-2560x1600@240). Każdy monitor ma własne pulpity 1-9, `super+1..9` i
-`super+shift+1..9` działają na monitorze z fokusem, pasek na każdym ekranie
-pokazuje jego pulpity.
+`bin/monitors` (odpalany z `xmonad/autostart` i przez `super+alt+w`)
+ustawia zewnętrzne ekrany po lewej, panel laptopa (eDP) po prawej, każdy w
+natywnej rozdzielczości z najwyższym odświeżaniem (eDP 2560x1600@240).
+
+Workspace'y 1-9 są wspólne dla wszystkich monitorów (tak działa xmonad):
+każdy monitor pokazuje jeden z nich, `super+N` wyciąga workspace N na
+monitor z fokusem (jeśli był na drugim, monitory się nim zamieniają).
 
 - Inna kolejność: zapisz nazwy od lewej do prawej w
-  `~/.config/bspwm/monitor-order` i wciśnij `super+alt+w`:
+  `~/.config/xmonad/monitor-order` (stary `~/.config/bspwm/monitor-order`
+  też działa) i wciśnij `super+alt+w`:
   ```fish
   xrandr --query | grep ' connected'        # nazwy wyjść
-  echo "eDP HDMI-A-0" > ~/.config/bspwm/monitor-order
+  echo "eDP HDMI-A-0" > ~/.config/xmonad/monitor-order
   ```
   Sterownik amdgpu nazywa je `eDP`/`HDMI-A-0`, modesetting `eDP-1`/`HDMI-1`.
   Plik jest w `.gitignore`, bo zależy od komputera.
-- Po podłączeniu monitora w trakcie sesji: `super+alt+w`. Okna na
-  istniejących pulpitach zostają.
-- Skalowanie: X11 nie ma skali per monitor jak niri. Dla jednej wspólnej
+- Po podłączeniu monitora w trakcie sesji: `super+alt+w`. Okna zostają na
+  swoich workspace'ach.
+- Skalowanie: X11 nie ma skali per monitor jak Wayland. Dla jednej wspólnej
   skali dopisz `Xft.dpi: 120` (lub 144) do `~/.Xresources`.
 - Laptop hybrydowy na sterowniku nvidia: jeśli `xrandr --query` nie widzi
   zewnętrznego ekranu (podpięty do NVIDII), skrypt sam próbuje
   `xrandr --setprovideroutputsource NVIDIA-G0 modesetting` (reverse PRIME).
 
-## Tray i powiadomienia (Slack)
+## Slack, tray i powiadomienia
 
-Tray jest na dole paska (protokół StatusNotifierItem, ten sam co w KDE i na
-NixOS). Nieprzeczytane w Slacku widać po kropce na jego ikonie, a nowe
-wiadomości wyskakują jako powiadomienia `dunst` w prawym górnym rogu.
+Slack ma na pasku **własny przycisk**, niezależny od traya: widać go zawsze,
+gdy Slack jest zainstalowany (wyszarzony, gdy nie działa). Czerwony licznik
+to liczba powiadomień ze Slacka od ostatniego przełączenia się na niego.
+Klik albo `super+n` otwiera Slacka (uruchamia go, gdy nie działa) i zeruje
+licznik. Licznik zeruje się też sam, gdy okno Slacka dostaje fokus.
 
-- Slack (i inne aplikacje Electron) rejestruje ikonę tylko przy starcie,
-  więc musi wystartować, gdy pasek już działa. Jeśli ikony nie ma, zamknij
-  Slacka całkiem (`pkill -x slack`) i uruchom ponownie.
+- Licznik liczy `dunst`: reguła `[slack]` w `dunstrc` odpala
+  `dunst/slack-count` przy każdym powiadomieniu Slacka. W Slacku muszą być
+  włączone powiadomienia na pulpicie.
+- Slack startuje sam z sesją, schowany do traya (`bin/slack-autostart`, z
+  `xmonad/autostart`). Czeka, aż tray paska będzie gotowy, bo Slack
+  (Electron) szuka traya tylko przy starcie. Wcześniej to był powód, dla
+  którego ikona się nie pokazywała. Nie chcesz autostartu: usuń ostatnią
+  linię z `xmonad/autostart`.
+- Tray (StatusNotifierItem, ten sam protokół co w KDE) jest po prawej.
+  Aplikacje, które mają tylko stary tray XEmbed, się tam nie pokażą.
 - `super+alt+w` przeładowuje quickshell bez zabijania procesu, więc ikony w
   trayu zostają.
-- W ustawieniach Slacka musi być włączona ikona w trayu / obszarze
-  powiadomień.
-- Aplikacje, które mają tylko stary tray XEmbed, się tu nie pokażą.
-- Test powiadomień: `notify-send test "działa"`.
+- Nowe wiadomości wyskakują jako powiadomienia `dunst` w prawym górnym rogu,
+  pod paskiem. Test: `notify-send test "działa"`, licznika Slacka:
+  `notify-send -a Slack Ktoś "cześć"`.
 
 Kwadraciki zamiast ikon (np. baterii) znaczą brak czcionki Iosevka Nerd
 Font (krok 2).
@@ -289,9 +331,10 @@ nvim przeładuje motyw sam. WezTerm przeładowuje config sam po zapisie.
   Obsidiana), render-markdown, flash (`s`), yazi (`<Leader>-`), oil
   (`<Leader>O`), diffview, trouble (`<Leader>x`), todo-comments, grug-far.
 - ghostty -> wezterm, stała paleta zamiast generowanej przez wallust.
-- niri -> bspwm (X11). Brak kompozytora, więc nie ma przezroczystości ani
-  cieni; pasek i launcher są nieprzezroczyste. Jeśli chcesz, doinstaluj
-  `picom` i dopisz `picom -b` w `bspwmrc`.
+- niri -> xmonad (X11) + picom: animacje otwierania/zamykania okien i
+  zmiany workspace'ów (zoom), płynne przesuwanie okien przy zmianie
+  layoutu, cienie, zaokrąglone rogi, blur pod przezroczystym weztermem.
+  Ustawienia w `picom/picom.conf`; po zmianie `pkill picom; picom -b`.
 - quickshell: pasek i launcher. Bez dashboardu (więc też
   bez kalendarza Google, kafelków i OSD), file managera, powiadomień i lock
   screena (blokuje `i3lock`). Bez „kofeiny”: na X11 nie ma tu demona
@@ -302,6 +345,6 @@ nvim przeładuje motyw sam. WezTerm przeładowuje config sam po zapisie.
 ## Bez systemd
 
 Nic tu nie jest jednostką systemd. Gdy init to systemd, pipewire startuje
-przez socket activation jak zwykle. Na sysvinit/runit `bspwmrc` sam odpala
+przez socket activation jak zwykle. Na sysvinit/runit `xmonad/autostart` sam odpala
 `pipewire`, `wireplumber` i `pipewire-pulse`, a `~/.xinitrc` tworzy sesyjny
 D-Bus (`dbus-run-session`, potrzebny dla traya).

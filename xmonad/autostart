@@ -1,0 +1,51 @@
+#!/bin/sh
+# Session programs. xmonad runs this on start and on every restart
+# (super+alt+w), so every step is safe to repeat. No systemd units.
+
+# helper scripts (shot, screenrec, monitors, ...) live in ~/.local/bin.
+# xinitrc adds it only under startx; a display manager session starts xmonad
+# without it, and quickshell inherits this PATH
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+
+# ---- monitors / X input -----------------------------------------------------
+"$HOME/.local/bin/monitors"
+setxkbmap pl -option caps:escape
+xsetroot -cursor_name left_ptr
+# background colour: hsetroot sets _XROOTPMAP_ID, which picom draws; with
+# plain `xsetroot -solid` the desktop is black under picom
+hsetroot -solid "#191724" 2>/dev/null || xsetroot -solid "#191724"
+# touchpad: tap to click + natural scroll (libinput)
+xinput list --name-only 2>/dev/null | grep -i touchpad | while read -r dev; do
+    xinput set-prop "$dev" "libinput Tapping Enabled" 1 2>/dev/null
+    xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 1 2>/dev/null
+done
+
+# ---- audio without systemd --------------------------------------------------
+# With systemd as init, pipewire is socket-activated per user and must not be
+# started twice. Without it (sysvinit/runit) nothing else starts it.
+if [ ! -d /run/systemd/system ] && command -v pipewire >/dev/null &&
+   ! pgrep -x pipewire >/dev/null; then
+    pipewire & sleep 0.5
+    wireplumber &
+    pipewire-pulse &
+fi
+
+# ---- compositor: animations, shadows, rounded corners, blur -----------------
+command -v picom >/dev/null && ! pgrep -x picom >/dev/null &&
+    picom -b --config "$HOME/.config/picom/picom.conf"
+
+# notifications (Slack, screenshots, recording, OCR)
+command -v dunst >/dev/null && ! pgrep -x dunst >/dev/null && dunst &
+
+# ---- bar + launcher ---------------------------------------------------------
+# kept running across xmonad restarts: killing it would drop the tray and
+# Slack only registers its tray icon once, at its own startup
+pgrep -x quickshell >/dev/null || setsid -f quickshell >/dev/null 2>&1
+
+# Slack in the tray, started after the bar so its icon lands there
+command -v slack >/dev/null && setsid -f slack-autostart >/dev/null 2>&1
+
+exit 0
