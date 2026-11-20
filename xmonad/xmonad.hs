@@ -14,6 +14,7 @@ import qualified XMonad.StackSet as W
 
 import XMonad.Actions.CycleWS (nextWS, prevWS, toggleOrView, toggleWS)
 import XMonad.Actions.Navigation2D
+import XMonad.Actions.UpdatePointer (updatePointer)
 import XMonad.Actions.WindowGo (raiseMaybe)
 import XMonad.Hooks.EwmhDesktops (ewmh, ewmhFullscreen)
 import XMonad.Hooks.InsertPosition (Focus (Newer), Position (End), insertPosition)
@@ -390,7 +391,12 @@ main = do
         , manageHook = myManageHook
         , keys = (`mkKeymap` myKeys)
         , mouseBindings = myMouse
-        , logHook = barLog
+        , -- updatePointer: after the focus moves without the mouse (new window,
+          -- layout change, super+j/k, ...) the pointer jumps to the middle of
+          -- the focused window, unless it is already inside it. Focus and
+          -- pointer then always agree, so super+f, super+shift+c etc. never
+          -- hit a different window than the one under the mouse.
+          logHook = barLog >> updatePointer (0.5, 0.5) (0, 0)
         , handleEventHook = screenUnderMouse
         , rootMask = rootMask def .|. pointerMotionMask
         , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs

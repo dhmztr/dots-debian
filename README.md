@@ -243,6 +243,10 @@ popraw też tam.
 
 Mysz: `super` + lewy przycisk przesuwa okno (robi je pływającym), `super` +
 prawy zmienia rozmiar.
+Fokus idzie za kursorem, a gdy fokus zmieni się bez myszy (nowe okno,
+zmiana layoutu, `super+j/k`), kursor przeskakuje na środek okna z fokusem.
+Dzięki temu `super+f`, `super+shift+c` itd. zawsze trafiają w okno pod
+kursorem.
 
 ## Pasek
 
