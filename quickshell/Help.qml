@@ -21,7 +21,10 @@ FloatingWindow {
             { keys: ["super+q"], desc: "przeglądarka" },
             { keys: ["super+r"], desc: "launcher: aplikacje, okna, kalkulator, pliki" },
             { keys: ["super+n"], desc: "nowe okno wezterma w tym samym katalogu" },
-            { keys: ["super+shift+n"], desc: "Slack (przełącz albo uruchom)" },
+            { keys: ["super+shift+n"], desc: "Slack jako wysuwane okno" },
+            { keys: ["super+o"], desc: "dzisiejsze notatki (~/notes, nvim)" },
+            { keys: ["super+c"], desc: "kalkulator (qalc)" },
+            { keys: ["super+v"], desc: "historia schowka" },
             { keys: ["super+`", "super+'"], desc: "terminal scratchpad (wysuwa / chowa)" },
             { keys: ["super+b"], desc: "btop scratchpad" },
             { keys: ["super+s"], desc: "ta pomoc" }
@@ -66,6 +69,14 @@ FloatingWindow {
             { keys: ["super+shift+t"], desc: "OCR obszaru do schowka" },
             { keys: ["super+p"], desc: "pipeta koloru" },
             { keys: ["super+."], desc: "emoji" }
+        ] },
+        { name: "Praca", icon: "\uf0b1", items: [
+            { keys: ["super+shift+p"], desc: "przejdź do projektu (workspace + katalog)" },
+            { keys: ["super+ctrl+p"], desc: "wyślij okno do projektu" },
+            { keys: ["super+d"], desc: "tryb skupienia: wstrzymaj powiadomienia" },
+            { keys: ["pasek"], desc: "spotkanie: klik dołącza, prawy klik lista" },
+            { keys: ["pasek"], desc: "GitLab: klik lista MR, prawy klik odśwież" },
+            { keys: ["ctrl+klik"], desc: "plik:linia w terminalu otwiera nvim" }
         ] },
         { name: "System", icon: "", items: [
             { keys: ["super+alt+w"], desc: "przeładuj: monitory, xmonad, pasek" },

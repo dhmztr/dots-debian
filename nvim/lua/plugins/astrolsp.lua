@@ -19,8 +19,23 @@ return {
     -- its ensure_installed). rust-analyzer comes from rustup and is set up by
     -- rustaceanvim (astrocommunity.pack.rust) - it must NOT be listed here, or
     -- astrolsp starts a second client. clangd from apt (clangd) or Mason.
-    servers = {},
+    servers = { "clangd" },
     config = {
+      -- C/C++: index in the background, clang-tidy hints, no automatic
+      -- #include insertion. Needs compile_commands.json in the project root
+      -- (cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON, gn gen --export-compile-commands,
+      -- bear -- make).
+      clangd = {
+        cmd = {
+          "clangd",
+          "--background-index",
+          "--clang-tidy",
+          "--header-insertion=never",
+          "--completion-style=detailed",
+          "--function-arg-placeholders=false",
+          "-j=8",
+        },
+      },
       rust_analyzer = {
         settings = {
           ["rust-analyzer"] = {
@@ -29,6 +44,9 @@ return {
             -- every diagnostic request in some codebases
             diagnostics = { disabled = { "typed-hole" } },
             cargo = {
+              -- own target dir (target/rust-analyzer): its checks no longer
+              -- hold the build lock while `cargo build` / `cca` run
+              targetDir = true,
               features = "all",
               buildScripts = { enable = true },
               allTargets = true,

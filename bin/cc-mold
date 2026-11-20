@@ -1,0 +1,12 @@
+#!/bin/sh
+# Linker for cargo (CARGO_TARGET_..._LINKER, set in fish/conf.d/dev.fish):
+# the system C compiler driver, linking with mold. rustc (1.90+) asks for its
+# bundled lld with -fuse-ld=lld; that is dropped so mold is used instead.
+for arg do
+    shift
+    case $arg in
+        -fuse-ld=*) ;;
+        *) set -- "$@" "$arg" ;;
+    esac
+done
+exec cc "$@" -fuse-ld=mold

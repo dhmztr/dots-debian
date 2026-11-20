@@ -51,6 +51,14 @@ if command -v xmonad >/dev/null; then
         echo "xmonad --recompile failed, see the errors above"
 fi
 
+# git: delta as pager (git/delta.gitconfig), included from ~/.gitconfig
+if ! git config --global --get-all include.path 2>/dev/null | grep -qx "$repo/git/delta.gitconfig"; then
+    git config --global --add include.path "$repo/git/delta.gitconfig"
+    echo "added   include of git/delta.gitconfig to ~/.gitconfig"
+else
+    echo "ok      ~/.gitconfig includes git/delta.gitconfig"
+fi
+
 # neopywal (nvim colorscheme) reads its palette from here
 mkdir -p "$HOME/.cache/wal"
 cp "$repo/wal/colors-wal.vim" "$HOME/.cache/wal/colors-wal.vim"

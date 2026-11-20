@@ -12,16 +12,17 @@
 import XMonad
 import qualified XMonad.StackSet as W
 
+import XMonad.Actions.DynamicProjects
 import XMonad.Actions.CycleWS (nextWS, prevWS, toggleOrView, toggleWS)
 import XMonad.Actions.Navigation2D
 import XMonad.Actions.UpdatePointer (updatePointer)
-import XMonad.Actions.WindowGo (raiseMaybe)
-import XMonad.Hooks.EwmhDesktops (ewmh, ewmhFullscreen)
+import XMonad.Hooks.EwmhDesktops (addEwmhWorkspaceSort, ewmh, ewmhFullscreen)
 import XMonad.Hooks.InsertPosition (Focus (Newer), Position (End), insertPosition)
 import XMonad.Hooks.ManageDocks (ToggleStruts (..), avoidStruts, docks)
 import XMonad.Hooks.ManageHelpers (doCenterFloat, doFullFloat, isDialog)
 import XMonad.Hooks.SetWMName (setWMName)
 import XMonad.Hooks.StatusBar (xmonadPropLog')
+import XMonad.Hooks.WindowSwallowing (swallowEventHook)
 import XMonad.Hooks.UrgencyHook (NoUrgencyHook (..), focusUrgent, readUrgents, withUrgencyHook)
 import XMonad.Layout.MultiToggle (Toggle (..), mkToggle, single)
 import XMonad.Layout.MultiToggle.Instances (StdTransformers (NBFULL))
@@ -30,17 +31,20 @@ import XMonad.Layout.Renamed (Rename (Replace), renamed)
 import XMonad.Layout.ResizableTile (MirrorResize (..), ResizableTall (..))
 import XMonad.Layout.Spacing (Border (..), spacingRaw, toggleScreenSpacingEnabled, toggleWindowSpacingEnabled)
 import XMonad.Layout.ThreeColumns (ThreeCol (..))
+import XMonad.Prompt
+import XMonad.Prompt.FuzzyMatch (fuzzyMatch, fuzzySort)
 import XMonad.Util.EZConfig (mkKeymap, readKeySequence)
 import XMonad.Util.NamedScratchpad
+import XMonad.Util.WorkspaceCompare (filterOutWs, getSortByIndex)
 
 import Control.Exception (SomeException, try)
 import Control.Monad (forM, unless, when)
-import Data.Char (ord, toLower)
+import Data.Char (isSpace, ord, toLower)
 import Data.List (elemIndex, intercalate, sortOn)
 import Data.Monoid (All (..))
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
-import System.Directory (doesPathExist)
+import System.Directory (doesFileExist, doesPathExist)
 import System.Environment (lookupEnv, setEnv)
 import System.Exit (exitSuccess)
 import System.Posix.Process (executeFile)
@@ -74,7 +78,8 @@ myLayout =
 
 -- ---- scratchpads -------------------------------------------------------------
 -- Floating windows that drop down over everything and hide again with the
--- same key: a terminal (super+` or super+') and btop (super+b).
+-- same key: a terminal (super+` or super+'), btop (super+b), today's notes
+-- (super+o), a calculator (super+c) and Slack (super+shift+n).
 -- --always-new-process: a wezterm started while another one runs would
 -- otherwise open its window in the running process, without the --class,
 -- and xmonad would never recognise it as the scratchpad.
@@ -83,8 +88,14 @@ scratchpads :: [NamedScratchpad]
 scratchpads =
   [ NS "term" "wezterm start --always-new-process --class scratch-term" (isClass "scratch-term") (centered 0.6 0.55)
   , NS "btop" "wezterm start --always-new-process --class scratch-btop -- btop" (isClass "scratch-btop") (centered 0.7 0.7)
+  , -- today's notes: ~/notes/YYYY-MM-DD.md in nvim
+    NS "notes" (wez "scratch-notes" "sh -c 'mkdir -p \"$HOME/notes\" && exec nvim \"$HOME/notes/$(date +%F).md\"'") (isClass "scratch-notes") (centered 0.55 0.7)
+  , NS "calc" (wez "scratch-calc" "qalc") (isClass "scratch-calc") (centered 0.35 0.45)
+  , -- Slack as a drop-down instead of a tiled window
+    NS "slack" "slack" (className =? "Slack") (centered 0.8 0.8)
   ]
   where
+    wez cls cmd = "wezterm start --always-new-process --class " ++ cls ++ " -- " ++ cmd
     isClass c = className =? c <||> appName =? c
     centered w h = customFloating $ W.RationalRect ((1 - w) / 2) ((1 - h) / 2) w h
 
@@ -95,6 +106,7 @@ myManageHook =
   composeAll
     [ title =? "qs-launcher" --> doFullFloat -- quickshell launcher overlay
     , title =? "qs-help" --> doFullFloat -- quickshell key overview (super+s)
+    , title =? "qs-clip" --> doFullFloat -- quickshell clipboard history (super+v)
     , className =? "Pavucontrol" --> doCenterFloat
     , className =? "pavucontrol" --> doCenterFloat
     , className =? "Blueman-manager" --> doCenterFloat
@@ -118,9 +130,17 @@ myKeys =
   , ("M-q", spawn "librewolf || firefox-esr")
   , ("M-r", spawn "quickshell ipc call launcher toggle")
   , ("M-s", spawn "quickshell ipc call help toggle")
-  -- Slack: focus or start. super+n itself stays free: wezterm opens a new
-  -- window in the current directory with it
-  , ("M-S-n", raiseMaybe (spawn "slack") (className =? "Slack"))
+  -- Slack drop-down (starts it if needed). super+n itself stays free:
+  -- wezterm opens a new window in the current directory with it
+  , ("M-S-n", namedScratchpadAction scratchpads "slack")
+  , ("M-o", namedScratchpadAction scratchpads "notes")
+  , ("M-c", namedScratchpadAction scratchpads "calc")
+  , ("M-v", spawn "quickshell ipc call clipboard toggle") -- clipboard history
+  , -- focus mode: pause / resume all notifications (bar shows it)
+    ("M-d", spawn "dunstctl set-paused toggle")
+  , -- projects (~/.config/xmonad/projects): switch / send the window there
+    ("M-S-p", switchProjectPrompt promptConf)
+  , ("M-C-p", shiftToProjectPrompt promptConf)
   , ("M-`", namedScratchpadAction scratchpads "term")
   , ("M-'", namedScratchpadAction scratchpads "term")
   , ("M-b", namedScratchpadAction scratchpads "btop")
@@ -238,6 +258,66 @@ checkKeys = do
   unless (null bad && null dups) $
     xmessage ("xmonad.hs keybindings\n" ++ line "unknown" bad ++ line "duplicate" dups)
 
+-- ---- projects ------------------------------------------------------------------
+-- ~/.config/xmonad/projects (not in the repo, see projects.example), one per line:
+--   name | directory | command; command
+-- super+shift+p jumps to a project's workspace (created on demand); on an
+-- empty one the commands run, and every terminal started there opens in the
+-- project's directory. Typing a new name in the prompt creates a project.
+
+loadProjects :: IO [Project]
+loadProjects = do
+  home <- fromMaybe "" <$> lookupEnv "HOME"
+  let file = home ++ "/.config/xmonad/projects"
+      expand ('~' : rest) = home ++ rest
+      expand d = d
+      parse l = case map trim (splitOn '|' l) of
+        (name : dir : rest) | not (null name), not (null dir) ->
+          let cmds = filter (not . null) (map trim (splitOn ';' (concat rest)))
+           in [ Project
+                  { projectName = name
+                  , projectDirectory = expand dir
+                  , projectStartHook = if null cmds then Nothing else Just (mapM_ spawn cmds)
+                  }
+              ]
+        _ -> []
+  exists <- doesFileExist file
+  fromFile <-
+    if not exists
+      then pure []
+      else do
+        content <- readFile file
+        length content `seq` pure (concatMap parse [l | l <- lines content, take 1 (trim l) /= "#"])
+  -- workspaces 1-9 are projects too (home directory unless the file says
+  -- otherwise): DynamicProjects deletes an empty workspace that is not a
+  -- project when you switch to a project from it
+  let named = map projectName fromFile
+      numbered = [Project ws home Nothing | ws <- myWorkspaces, ws `notElem` named]
+  pure (fromFile ++ numbered)
+  where
+    trim = dropWhile isSpace . reverse . dropWhile isSpace . reverse
+    splitOn c str = case break (== c) str of
+      (a, []) -> [a]
+      (a, _ : rest) -> a : splitOn c rest
+
+-- xmonad's own prompt (projects), in the Rosé Pine colours
+promptConf :: XPConfig
+promptConf =
+  def
+    { font = "xft:Iosevka Nerd Font:size=12"
+    , bgColor = "#191724"
+    , fgColor = "#e0def4"
+    , bgHLight = "#c4a7e7"
+    , fgHLight = "#191724"
+    , borderColor = "#c4a7e7"
+    , promptBorderWidth = 2
+    , height = 36
+    , position = CenteredAt 0.3 0.4
+    , alwaysHighlight = True
+    , searchPredicate = fuzzyMatch
+    , sorter = fuzzySort
+    }
+
 toggleFloat :: X ()
 toggleFloat = withFocused $ \w -> do
   floating <- gets (M.member w . W.floating . windowset)
@@ -284,8 +364,10 @@ barLog = do
   ws <- gets windowset
   urgent <- readUrgents
   let shown = [(W.tag (W.workspace s), sid) | s <- W.screens ws, let S sid = W.screen s]
-      order w = fromMaybe 99 (elemIndex (W.tag w) myWorkspaces)
-      real = sortOn order [w | w <- W.workspaces ws, W.tag w /= scratchpadWorkspaceTag]
+  -- same order and filter as the EWMH desktop list (see main), so the bar's
+  -- index for `xdotool set_desktop` points at the same workspace
+  sortWs <- getSortByIndex
+  let real = filterOutWs [scratchpadWorkspaceTag] (sortWs (W.workspaces ws))
   wsJson <- forM real $ \w -> do
     let wins = W.integrate' (W.stack w)
     apps <- mapM (runQuery className) wins
@@ -372,10 +454,13 @@ sessionEnv = do
 main :: IO ()
 main = do
   sessionEnv
+  projects <- loadProjects
   xmonad
       . ewmhFullscreen
+      . addEwmhWorkspaceSort (pure (filterOutWs [scratchpadWorkspaceTag]))
       . ewmh
       . docks
+      . dynamicProjects projects
       . withUrgencyHook NoUrgencyHook
       -- sideNavigation: the default line navigation casts a line from the
       -- middle of the window, which with gaps lands between two stacked
@@ -400,7 +485,13 @@ main = do
           -- pointer then always agree, so super+f, super+shift+c etc. never
           -- hit a different window than the one under the mouse.
           logHook = barLog >> updatePointer (0.5, 0.5) (0, 0)
-        , handleEventHook = screenUnderMouse
+        , -- swallowing: a GUI program started from a wezterm window takes the
+          -- terminal's place until it exits (image viewer, PDF, ...)
+          handleEventHook =
+            screenUnderMouse
+              <> swallowEventHook
+                (className =? "org.wezfurlong.wezterm")
+                (not <$> (className =? "org.wezfurlong.wezterm" <||> isDialog))
         , rootMask = rootMask def .|. pointerMotionMask
         , -- LG3D: Java (JetBrains etc.) draws grey windows under unknown WMs
           startupHook = do

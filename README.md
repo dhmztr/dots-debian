@@ -95,6 +95,25 @@ sudo apt install fish git curl wget unzip build-essential pkg-config \
   python3-venv clangd fontconfig
 ```
 
+Do pracy (sekcja „Praca” niżej):
+
+```sh
+sudo apt install git-delta qalc xss-lock mold ccache \
+  python3-icalendar python3-recurring-ical-events glab
+sudo apt install clipnotify sccache    # opcjonalne, patrz niżej
+```
+
+- `git-delta`: `git diff` / `log -p` / lazygit z podświetlaniem.
+- `qalc`: kalkulator pod `super+c`.
+- `xss-lock`: blokada po 10 min bezczynności i przy zamknięciu klapy.
+- `mold`, `ccache`, `sccache`: szybsze linkowanie i cache kompilacji
+  (`sccache`, jeśli apt go nie ma: `cargo binstall sccache`).
+- `python3-icalendar` + `python3-recurring-ical-events`: spotkania z Google
+  Calendar na pasku; bez drugiego widać tylko spotkania jednorazowe.
+- `glab`: MR-y z GitLaba na pasku.
+- `clipnotify`: historia schowka reaguje od razu; bez niego sprawdza
+  schowek co sekundę.
+
 - Debian nazywa część programów inaczej: `bat` to `batcat`, `fd` to `fdfind`.
   Config fisha sam to obsługuje (`bat`, `cat` i `fd` działają normalnie).
 - Jeśli apt nie znajdzie któregoś pakietu, pomiń go i doinstaluj przez
@@ -210,7 +229,11 @@ popraw też tam.
 | `super+Return` / `super+q` | wezterm / librewolf (albo firefox-esr) |
 | `super+r` | launcher (aplikacje, otwarte okna, kalkulator `2*21`, emoji po `:`, pliki w `~`) |
 | `super+n` | nowe okno wezterma w tym samym katalogu (skrót wezterma) |
-| `super+shift+n` | Slack: przełącz na niego albo uruchom |
+| `super+shift+n` | Slack jako wysuwane okno (uruchamia go, gdy nie działa) |
+| `super+o` / `super+c` | dzisiejsze notatki (nvim) / kalkulator (qalc), wysuwane |
+| `super+v` | historia schowka |
+| `super+d` | tryb skupienia: wstrzymaj / wznów powiadomienia |
+| `super+shift+p` / `super+ctrl+p` | przejdź do projektu / wyślij okno do projektu |
 | ``super+` `` lub `super+'` / `super+b` | scratchpad: terminal / btop (wysuwa się nad wszystko, ten sam skrót chowa) |
 | `super+h/l`, `super+←/→/↑/↓` | fokus okna w tym kierunku |
 | `super+k/j` | fokus na okno wyżej / niżej (tylko w pionie) |
@@ -258,7 +281,8 @@ Na górze każdego ekranu, „wyspy” z zaokrąglonymi rogami:
   klik przełącza). Layoutu nie ma na stałe: po zmianie skrótem jego nazwa
   i ikona wyskakują na sekundę na środku ekranu.
 - **środek**: aktywne okno, ikona + tytuł (na ekranie z fokusem).
-- **prawo**: nagrywanie, Slack, głośność (scroll zmienia, klik wycisza,
+- **prawo**: nagrywanie, najbliższe spotkanie, GitLab (MR-y i pipeline'y),
+  tryb skupienia (dzwonek), Slack, głośność (scroll zmienia, klik wycisza,
   prawy klik: pavucontrol), bateria (tylko na laptopie), tray, zegar
   (klik: data).
 
@@ -319,6 +343,108 @@ licznik. Licznik zeruje się też sam, gdy okno Slacka dostaje fokus.
 
 Kwadraciki zamiast ikon (np. baterii) znaczą brak czcionki Iosevka Nerd
 Font (krok 2).
+
+## Praca
+
+### GitLab na pasku
+
+Ikona GitLaba pokazuje twoje otwarte MR-y: kropka to najgorszy pipeline
+(czerwona: failed, żółta pulsująca: w toku, turkusowa: wszystko zielone),
+liczba to MR-y, oko z liczbą to MR-y czekające na twoje review. Klik
+rozwija listę (klik w MR otwiera go w przeglądarce), prawy klik odświeża
+(samo odświeża się co 3 minuty).
+
+```sh
+glab auth login --hostname gitlab.firma.pl      # token z uprawnieniem read_api
+mkdir -p ~/.config/dots && echo gitlab.firma.pl > ~/.config/dots/gitlab-host
+gitlab-status                                   # test: JSON z MR-ami
+```
+
+### Spotkania z Google Calendar
+
+Na pasku: najbliższe spotkanie z odliczaniem („za 12 min · Standup”), żółte
+na 15 minut przed, czerwone na 5, fioletowe „teraz” w trakcie. Klik dołącza
+(link do Meet, Zooma albo Teams z wydarzenia), prawy klik pokazuje spotkania
+z najbliższych 24 godzin. Dwie minuty przed startem przychodzi powiadomienie.
+
+Źródło to prywatny adres iCal kalendarza, bez OAuth i bez projektu w Google
+Cloud: Google Calendar → Ustawienia → twój kalendarz → Integracja
+kalendarza → „Tajny adres w formacie iCal”.
+
+```sh
+mkdir -p ~/.config/dots
+echo 'https://calendar.google.com/calendar/ical/.../basic.ics' > ~/.config/dots/calendar-ics
+next-meeting                                    # test: JSON ze spotkaniami
+```
+
+Kilka kalendarzy: po jednym adresie w linii. Jeśli w firmowym Google
+Workspace tego pola nie ma, administrator wyłączył tajne adresy i ta wyspa
+paska nie zadziała.
+
+### Projekty (workspace + katalog)
+
+`super+shift+p` otwiera prompt z projektami: wybranie przenosi na workspace
+projektu (tworzy go, gdy go nie ma) i przy pustym uruchamia jego programy;
+każdy terminal otwarty na tym workspace startuje w katalogu projektu.
+Wpisanie nowej nazwy tworzy projekt od ręki (zapyta o katalog).
+`super+ctrl+p` wysyła okno do projektu. Lista w
+`~/.config/xmonad/projects` (przykład: `xmonad/projects.example`):
+
+```
+work  | ~/dev/src      | wezterm; librewolf https://gitlab.firma.pl/dashboard/merge_requests
+2     | ~/dev/src      |
+```
+
+### Skupienie, schowek, notatki
+
+- `super+d`: tryb skupienia, powiadomienia (też Slack) czekają w kolejce; na
+  pasku przekreślony dzwonek z liczbą czekających, ponowne `super+d` je
+  pokazuje.
+- `super+v`: historia schowka (tekst, ostatnie 200, bez haseł z
+  menedżerów haseł), Enter kopiuje, Shift+Del usuwa wpis.
+- `super+o`: dzisiejsza notatka `~/notes/RRRR-MM-DD.md` w wysuwanym nvim;
+  `super+c`: kalkulator; `super+shift+n`: Slack jako wysuwane okno.
+- Program graficzny uruchomiony z terminala (podgląd obrazka, PDF) zajmuje
+  miejsce terminala, dopóki działa (window swallowing).
+- Blokada ekranu po 10 minutach bezczynności i przy zamknięciu klapy
+  (`xss-lock`).
+
+### Terminal i git
+
+- Polecenie, które trwało ponad 30 s, kończy się powiadomieniem (✓ albo ✗
+  z kodem), jeśli okno terminala nie ma wtedy fokusu. Próg:
+  `set -U notify_after_ms 60000`.
+- `wt 108277 bookmark cls`: worktree `../<repo>-108277` z gałęzią
+  `108277-bookmark-cls` i od razu `cd`; `wt 108277` wraca do niego (albo
+  bierze istniejącą gałąź `108277-*`), `wt` listuje, `wt rm 108277` usuwa.
+  Kilka zadań naraz bez przełączania gałęzi i przebudowy.
+- `ticket-hook`: commity w tym repo dostają prefiks z numeru na początku
+  gałęzi (`108277: ...`). `wt` instaluje go sam. Istniejącego hooka nie
+  rusza.
+- Skróty gita i cargo (`gs`, `gd`, `cb`, `cca`, ...) to abbr: po spacji
+  rozwijają się w pełne polecenie, które widać i można poprawić.
+- `cca`: clippy, testy i build, wszystko z `--all-features`, stop na
+  pierwszym błędzie.
+- `git diff` / `log -p` / lazygit przez `delta` (`install.sh` dopisuje
+  `git/delta.gitconfig` do `~/.gitconfig`; bez delty wszystko działa po
+  staremu).
+- W weztermie `ctrl+klik` na `src/main.rs:42:7` z błędu kompilatora albo
+  testu otwiera plik w nvim w nowej karcie, w tej linii.
+  `ctrl+shift+space`: quick select (hashe, ścieżki, URL-e na literę).
+
+### Build i nvim
+
+- Rust linkuje przez `mold` (`bin/cc-mold`, ustawiane w fishu, gdy mold
+  jest), rustc idzie przez `sccache`, C/C++ z CMake przez `ccache`. Dla gn
+  dopisz `cc_wrapper = "ccache"` do `args.gn`.
+- rust-analyzer buduje do `target/rust-analyzer`, więc nie blokuje
+  `cargo build` w terminalu.
+- clangd z indeksem w tle i clang-tidy; potrzebuje `compile_commands.json`
+  w katalogu projektu (`cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`,
+  `gn gen --export-compile-commands`, `bear -- make`).
+- `<Leader>T`: testy (neotest; test pod kursorem, cały plik, wyniki przy
+  liniach), `<Leader>M`: taski (overseer: build/test z wynikiem i quickfixem),
+  `<Leader>d`: debugger (nvim-dap + codelldb dla Rusta i C/C++).
 
 ## Kolory
 

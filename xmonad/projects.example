@@ -1,0 +1,12 @@
+# xmonad projects: copy to ~/.config/xmonad/projects (that file is not in the
+# repo) and adjust. One project per line:
+#   name | directory | command; command
+# super+shift+p: jump to a project (its workspace is created when needed and,
+# while empty, the commands start). Terminals started on a project's workspace
+# open in its directory. super+ctrl+p sends the focused window to a project.
+# A digit as the name gives that numbered workspace a directory.
+#
+# work  | ~/dev/src       | wezterm; librewolf https://gitlab.example.com/dashboard/merge_requests
+# dots  | ~/dots-debian   | wezterm
+# notes | ~/notes         | wezterm start -- nvim .
+# 2     | ~/dev/src       |

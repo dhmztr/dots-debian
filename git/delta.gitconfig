@@ -1,0 +1,27 @@
+# delta as git's pager: syntax highlighting, line numbers, side-by-side on
+# wide terminals. Included from ~/.gitconfig by install.sh
+# ([include] path = ~/dots-debian/git/delta.gitconfig); needs `delta`
+# (apt install git-delta). Without delta git falls back to less / plain.
+[core]
+    pager = "command -v delta >/dev/null && exec delta || exec less -FRX"
+[interactive]
+    diffFilter = "command -v delta >/dev/null && exec delta --color-only || exec cat"
+[delta]
+    navigate = true          # n / N jump between files
+    line-numbers = true
+    side-by-side = false     # toggle per command: git diff | delta -s
+    syntax-theme = base16
+    file-style = bold "#c4a7e7"
+    file-decoration-style = "#c4a7e7" ul
+    hunk-header-style = file line-number syntax
+    hunk-header-decoration-style = "#6e6a86" box
+    minus-style = syntax "#3a2030"
+    minus-emph-style = syntax "#5a2a40"
+    plus-style = syntax "#1f3332"
+    plus-emph-style = syntax "#2a4a48"
+    line-numbers-minus-style = "#eb6f92"
+    line-numbers-plus-style = "#9ccfd8"
+[merge]
+    conflictStyle = zdiff3
+[diff]
+    colorMoved = default

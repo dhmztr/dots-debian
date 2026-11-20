@@ -3,3 +3,4 @@ fish/fish_variables
 xmonad/monitor-order
 # lazy.nvim writes its lockfile to stdpath("state") (see lazy_setup.lua)
 nvim/lazy-lock.json
+xmonad/projects
