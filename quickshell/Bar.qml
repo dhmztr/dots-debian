@@ -53,6 +53,9 @@ PanelWindow {
         verticalAlignment: Text.AlignVCenter
     }
 
+    // layout name pop-up in the middle of this screen (LayoutOsd.qml)
+    LayoutOsd { bar: root }
+
     // scroll anywhere on the bar: previous / next workspace
     WheelHandler { onWheel: e => Xmonad.cycle(e.angleDelta.y > 0 ? -1 : 1) }
 
